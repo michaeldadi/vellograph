@@ -77,6 +77,7 @@ struct FolderComparisonView: View {
                         Text("A → B").tag(true)
                         Text("B → A").tag(false)
                     }
+                    .labelsHidden()
                     .pickerStyle(.segmented)
                     .frame(width: 180)
                     Button("Preview Copy Selected") { prepare(.copy) }

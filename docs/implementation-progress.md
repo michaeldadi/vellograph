@@ -380,10 +380,14 @@ local use, hosted CI, and release qualification.
   nine-case `native-ui` job and the parallel build-and-test job passed at
   commit `121b229`.
 - Folder controls now occupy two rows at the 900-point minimum window width.
-  A new native case is prepared to check toolbar bounds, preview cancel,
-  selected copy while retaining destination-only content, and rejection of a
-  destination edit made after clone preview. It has compiled locally but has
-  not yet passed the hosted UI run.
+  A tenth hosted native case passed toolbar bounds, preview cancel, selected
+  copy while retaining destination-only content, and rejection of a destination
+  edit made after clone preview. The full hosted run `42478704178` passed both
+  jobs at commit `2f409c0`. The installed signed Debug app now includes these
+  changes and passed bundle and signature readback. A local screenshot exposed
+  the Direction picker label wrapping at the minimum window width, so its
+  redundant visible label was hidden; the installed app's toolbar was then
+  visually checked again. The label-only revision still needs hosted CI.
 
 ## Next verification and implementation
 
