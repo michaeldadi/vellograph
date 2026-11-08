@@ -101,8 +101,10 @@ local use, hosted CI, and release qualification.
   A final-check race test now changes a destination file immediately before
   its backup move. The copy compares the recovered bytes with the preview and
   restores that external edit without installing the source. This narrows the
-  replacement race; path-component swaps still require descriptor-based
-  operations.
+  replacement race. A second final-check test swaps an existing destination
+  parent for a link to an outside folder; the recheck rejects it and leaves
+  the outside file unchanged. Path-component swaps after that recheck still
+  require descriptor-based operations.
   Other races and failure-injection work remain open.
 - FSEvents refreshes text, folder, and Git views; pause/resume was exercised
   with disposable files in the native app.
@@ -506,8 +508,9 @@ local use, hosted CI, and release qualification.
   commit `7187cd6`, including all 14 native UI cases. A new core test uses a
   private same-user Unix socket whose peer reads the request and closes before
   replying; the client returns `invalidMessage` promptly. The full Swift
-  package suite and signed Release build pass locally with that test. A real
-  app-process interruption and wrong-user peer workflow remain open.
+  package suite and signed Release build pass locally with that test. Hosted
+  run `42509914277` passed both jobs at commit `112074c`. A real app-process
+  interruption and wrong-user peer workflow remain open.
 - Session restore now reports how many saved comparisons it skipped when a
   source file has disappeared. The existing native restore test checks that
   message before reopening the comparison from Recents and checking its error.

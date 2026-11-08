@@ -247,6 +247,11 @@ public struct FolderOperationPlan: Sendable {
                     throw FolderOperationError.stalePreview(action.path)
                 }
                 try afterFinalTargetCheck?(action)
+                try validateRootIdentities()
+                try Self.validateDestinationParents(destinationRoot, path: action.path)
+                guard try Self.fingerprintAt(target) == action.destinationFingerprint else {
+                    throw FolderOperationError.stalePreview(action.path)
+                }
                 if action.kind == .remove, action.itemKind == .directory {
                     // rmdir is atomic and fails if an excluded or newly arrived
                     // child exists. Moving the whole directory would silently

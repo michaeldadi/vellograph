@@ -66,6 +66,35 @@ import Testing
     #expect(try String(contentsOf: sourceFile, encoding: .utf8) == "source")
 }
 
+@Test func destinationParentSwappedToSymbolicLinkAfterFinalCheckIsRejected() throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let sourceSubdirectory = source.appendingPathComponent("sub", isDirectory: true)
+    let destinationSubdirectory = destination.appendingPathComponent("sub", isDirectory: true)
+    let outside = root.appendingPathComponent("outside", isDirectory: true)
+    for directory in [sourceSubdirectory, destinationSubdirectory, outside] {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+    }
+    try Data("source".utf8).write(to: sourceSubdirectory.appendingPathComponent("item.txt"))
+    try Data("previewed".utf8).write(to: destinationSubdirectory.appendingPathComponent("item.txt"))
+    try Data("outside".utf8).write(to: outside.appendingPathComponent("item.txt"))
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["sub/item.txt"])
+    #expect(throws: FolderOperationError.unsafeDestination("sub/item.txt")) {
+        try plan.apply(afterFinalTargetCheck: { action in
+            guard action.path == "sub/item.txt" else { return }
+            try FileManager.default.moveItem(at: destinationSubdirectory,
+                                             to: root.appendingPathComponent("retained-sub"))
+            try FileManager.default.createSymbolicLink(atPath: destinationSubdirectory.path,
+                                                       withDestinationPath: outside.path)
+        })
+    }
+    #expect(try String(contentsOf: outside.appendingPathComponent("item.txt"),
+                       encoding: .utf8) == "outside")
+    #expect(try String(contentsOf: root.appendingPathComponent("retained-sub/item.txt"),
+                       encoding: .utf8) == "previewed")
+}
+
 @Test func replacingDestinationRootInvalidatesIdenticalLookingPreview() throws {
     let (root, source, destination) = try folders()
     defer { try? FileManager.default.removeItem(at: root) }
