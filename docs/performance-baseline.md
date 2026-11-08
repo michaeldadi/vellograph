@@ -46,7 +46,11 @@ difference mask, excluding the process startup measured by `/usr/bin/time`.
 The 287 MB figure is the process peak, including decoded inputs and mask. This does not
 measure SwiftUI drawing, scrolling, or the full app's memory use.
 
-An 8192 × 8192 pair was rejected in 0.01 seconds by the current 25-million-pixel
-limit. The 5000 × 5000 probe exercises that limit; larger image support needs a
-bounded-memory implementation before it can qualify. The 420 MB figure is a
-single release-mode process peak on this Mac, not an app-level memory result.
+An 8192 × 8192 pair was rejected by the current 25-million-pixel limit.
+After adding an encoded-header dimension check before full ImageIO decode,
+the release-mode probe against the 262 KB fixture at
+`Tests/fixtures/huge-solid.png` exited with the intended size error in 0.33
+seconds including process startup, with a 10.8 MB process peak. The 5000 ×
+5000 probe exercises the limit; larger image support needs a bounded-memory
+implementation before it can qualify. The 420 MB figure is a single
+release-mode process peak on this Mac, not an app-level memory result.

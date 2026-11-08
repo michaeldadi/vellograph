@@ -260,8 +260,11 @@ local use, hosted CI, and release qualification.
   need instrumentation.
 - A release-mode 5000 × 5000 PNG pair completed the full pixel difference in
   0.861 seconds with a 420 MB process peak. An 8192 × 8192 pair was rejected
-  promptly by the current 25-million-pixel limit. See `performance-baseline.md`;
-  app-level latency and bounded-memory support above that limit remain open.
+  by the current 25-million-pixel limit. The difference and both registration
+  paths now check encoded dimensions before full decode. A 262 KB, 8192 × 8192
+  PNG fixture was rejected in a core test; a release-mode rejection peaked at
+  10.8 MB of process memory. See `performance-baseline.md`; app-level latency
+  and bounded-memory support above that limit remain open.
 - `.github/workflows/macos-ci.yml` now defines read-only PR, main-branch, and
   weekly package tests plus an unsigned Xcode app build on the `xcode-27`
   runner. Scheduled and manual runs also record the core text, folder, and

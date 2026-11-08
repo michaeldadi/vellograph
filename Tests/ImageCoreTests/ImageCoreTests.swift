@@ -59,6 +59,24 @@ import UniformTypeIdentifiers
     #expect(buffer.colorInformation.sourceDepth == 8)
 }
 
+@Test func compressedOversizeImageIsRejectedBeforeDecoding() throws {
+    let huge = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        .deletingLastPathComponent().appendingPathComponent("fixtures/huge-solid.png")
+    let size = try ImageSize.load(huge)
+    #expect(size.width == 8192 && size.height == 8192)
+    #expect(try Data(contentsOf: huge).count < 1_000_000)
+    #expect(throws: PixelDifferenceError.imageTooLarge) { try PixelBuffer.load(huge) }
+    #expect(throws: PixelDifferenceError.imageTooLarge) {
+        try PixelBuffer.load(data: Data(contentsOf: huge))
+    }
+    #expect(throws: PixelDifferenceError.imageTooLarge) {
+        try ImageRegistration.translation(left: huge, right: huge)
+    }
+    #expect(throws: PixelDifferenceError.imageTooLarge) {
+        try ImageRegistration.perspectiveAligned(left: huge, right: huge)
+    }
+}
+
 @Test func sRGBPixelFormatsHaveExpectedPrimaryAndNeutralValues() {
     let red = PixelSample(x: 0, y: 0, red: 255, green: 0, blue: 0, alpha: 255)
     let white = PixelSample(x: 1, y: 0, red: 255, green: 255, blue: 255, alpha: 255)

@@ -109,6 +109,8 @@ public enum ImageRegistration {
     /// Convert to the top-left, downward-positive coordinates used by the canvas.
     public static func translation(left: URL, right: URL) throws -> ImageTranslation {
         try Task<Never, Never>.checkCancellation()
+        try validateBoundedSize(left)
+        try validateBoundedSize(right)
         guard let leftSource = CGImageSourceCreateWithURL(left as CFURL, nil),
               let rightSource = CGImageSourceCreateWithURL(right as CFURL, nil),
               let reference = CGImageSourceCreateImageAtIndex(leftSource, 0, nil),
@@ -136,6 +138,8 @@ public enum ImageRegistration {
     /// Vision works best when both images depict substantially the same scene.
     public static func perspectiveAligned(left: URL, right: URL) throws -> Data {
         try Task<Never, Never>.checkCancellation()
+        try validateBoundedSize(left)
+        try validateBoundedSize(right)
         guard let leftSource = CGImageSourceCreateWithURL(left as CFURL, nil),
               let rightSource = CGImageSourceCreateWithURL(right as CFURL, nil),
               let reference = CGImageSourceCreateImageAtIndex(leftSource, 0, nil),
@@ -188,5 +192,12 @@ public enum ImageRegistration {
         }
         try Task<Never, Never>.checkCancellation()
         return png
+    }
+
+    private static func validateBoundedSize(_ url: URL) throws {
+        let size = try ImageSize.load(url)
+        guard size.width <= 25_000_000 / size.height else {
+            throw PixelDifferenceError.imageTooLarge
+        }
     }
 }

@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 import ImageIO
 
-public enum PixelDifferenceError: Error, LocalizedError {
+public enum PixelDifferenceError: Error, LocalizedError, Equatable {
     case unreadableImage
     case imageTooLarge
     case renderingFailed
@@ -106,6 +106,18 @@ public struct PixelBuffer: Sendable {
     }
 
     private static func load(_ source: CGImageSource) throws -> PixelBuffer {
+        // Check dimensions from the encoded header before ImageIO allocates a
+        // decoded bitmap. A compressed image can be tiny on disk and enormous
+        // when expanded.
+        guard let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let encodedWidth = properties[kCGImagePropertyPixelWidth] as? Int,
+              let encodedHeight = properties[kCGImagePropertyPixelHeight] as? Int,
+              encodedWidth > 0, encodedHeight > 0 else {
+            throw PixelDifferenceError.unreadableImage
+        }
+        guard encodedWidth <= 25_000_000 / encodedHeight else {
+            throw PixelDifferenceError.imageTooLarge
+        }
         guard let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
             throw PixelDifferenceError.unreadableImage
         }
@@ -113,7 +125,6 @@ public struct PixelBuffer: Sendable {
               image.width <= 25_000_000 / image.height else {
             throw PixelDifferenceError.imageTooLarge
         }
-        let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] ?? [:]
         let profile = properties[kCGImagePropertyProfileName] as? String
             ?? properties[kCGImagePropertyNamedColorSpace] as? String
             ?? "Unspecified"
