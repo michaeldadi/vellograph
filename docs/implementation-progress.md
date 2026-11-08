@@ -576,11 +576,14 @@ local use, hosted CI, and release qualification.
   source parent symlink swaps and identical-looking replacement directories
   fail without writing the destination. A selected root alias resolves before
   staging, keeping recovery on the destination's volume. Local source-swap,
-  alias, mode-preservation, and internal-link tests pass. Cancellation before
-  a staged copy leaves the destination untouched, and a forced interruption
+  alias, mode-preservation, and internal-link tests pass. Hosted run
+  `42519139925` passed both jobs at `23c10ae`. Source identity capture is
+  limited to planned mutations, avoiding extra metadata calls for equal items
+  in large folders. Cancellation before a staged copy leaves the destination
+  untouched, and a forced interruption
   after one replacement restores both destination files. Cancellation during
-  the underlying `fcopyfile` call remains unmeasured; hosted validation of
-  these changes remains pending.
+  the underlying `fcopyfile` call remains unmeasured; hosted validation of the
+  cancellation and equal-item optimization remains pending.
 
 ## Next verification and implementation
 

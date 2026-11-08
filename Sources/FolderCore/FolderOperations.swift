@@ -143,38 +143,30 @@ public struct FolderOperationPlan: Sendable {
                                      destinationRoot: destination, path: path)
             let destinationEntry = destinationEntries[path]
             let sourceFingerprint = try fingerprint(sourceEntry)
-            let (sourceParent, sourceName) = try sourceParent(in: sourceHandle, for: path)
-            guard let sourceEntryIdentity = try sourceParent.entryIdentity(sourceName) else {
-                throw FolderOperationError.stalePreview(path)
-            }
-            let sourceParentIdentity = try sourceParent.directoryIdentity()
             let destinationFingerprint = try destinationEntry.map(fingerprint)
             if let destinationEntry, destinationEntry.kind != sourceEntry.kind {
                 throw FolderOperationError.unsupportedItem(path)
             }
             if sourceEntry.kind == .directory {
                 if destinationEntry == nil {
-                    actions.append(FolderAction(path: path, kind: .createDirectory,
-                                                itemKind: .directory,
-                                                sourceFingerprint: sourceFingerprint,
-                                                destinationFingerprint: nil,
-                                                sourceIdentity: sourceEntryIdentity,
-                                                sourceParentIdentity: sourceParentIdentity))
+                    actions.append(try sourceAction(path: path, kind: .createDirectory,
+                                                    itemKind: .directory,
+                                                    sourceFingerprint: sourceFingerprint,
+                                                    destinationFingerprint: nil,
+                                                    sourceHandle: sourceHandle))
                 }
             } else if destinationEntry == nil {
-                actions.append(FolderAction(path: path, kind: .create,
-                                            itemKind: sourceEntry.kind,
-                                            sourceFingerprint: sourceFingerprint,
-                                            destinationFingerprint: nil,
-                                            sourceIdentity: sourceEntryIdentity,
-                                            sourceParentIdentity: sourceParentIdentity))
+                actions.append(try sourceAction(path: path, kind: .create,
+                                                itemKind: sourceEntry.kind,
+                                                sourceFingerprint: sourceFingerprint,
+                                                destinationFingerprint: nil,
+                                                sourceHandle: sourceHandle))
             } else if sourceFingerprint != destinationFingerprint {
-                actions.append(FolderAction(path: path, kind: .replace,
-                                            itemKind: sourceEntry.kind,
-                                            sourceFingerprint: sourceFingerprint,
-                                            destinationFingerprint: destinationFingerprint,
-                                            sourceIdentity: sourceEntryIdentity,
-                                            sourceParentIdentity: sourceParentIdentity))
+                actions.append(try sourceAction(path: path, kind: .replace,
+                                                itemKind: sourceEntry.kind,
+                                                sourceFingerprint: sourceFingerprint,
+                                                destinationFingerprint: destinationFingerprint,
+                                                sourceHandle: sourceHandle))
             }
         }
         if mode == .clone {
@@ -211,6 +203,22 @@ public struct FolderOperationPlan: Sendable {
                     actions: actions, options: options,
                     sourcePaths: Set(sourceEntries.keys), destinationPaths: Set(destinationEntries.keys),
                     sourceIdentity: sourceIdentity, destinationIdentity: destinationIdentity)
+    }
+
+    private static func sourceAction(
+        path: String, kind: FolderActionKind, itemKind: FolderItemKind,
+        sourceFingerprint: FolderFingerprint, destinationFingerprint: FolderFingerprint?,
+        sourceHandle: FolderDirectoryHandle
+    ) throws -> FolderAction {
+        let (parent, name) = try sourceParent(in: sourceHandle, for: path)
+        guard let identity = try parent.entryIdentity(name) else {
+            throw FolderOperationError.stalePreview(path)
+        }
+        return FolderAction(path: path, kind: kind, itemKind: itemKind,
+                            sourceFingerprint: sourceFingerprint,
+                            destinationFingerprint: destinationFingerprint,
+                            sourceIdentity: identity,
+                            sourceParentIdentity: try parent.directoryIdentity())
     }
 
     public func apply() throws -> FolderApplyResult {
