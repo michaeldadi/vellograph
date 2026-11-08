@@ -1,6 +1,7 @@
 import AppKit
 import DiffCore
 import ImageCore
+import os
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -368,6 +369,10 @@ struct ImageComparisonView: View {
             }
         }
         .task {
+            let signposter = OSSignposter(subsystem: "io.github.michaeldadi.vellograph",
+                                           category: "ImageDisplay")
+            let interval = signposter.beginInterval("PrepareImages", id: signposter.makeSignpostID())
+            defer { signposter.endInterval("PrepareImages", interval) }
             if imageA == nil { imageA = NSImage(contentsOf: left) }
             if imageB == nil { imageB = NSImage(contentsOf: right) }
             if sizeA == nil { sizeA = try? ImageSize.load(left) }
@@ -375,6 +380,10 @@ struct ImageComparisonView: View {
         }
         .task(id: differenceTaskID) {
             guard mode == .difference else { return }
+            let signposter = OSSignposter(subsystem: "io.github.michaeldadi.vellograph",
+                                           category: "ImageDifference")
+            let interval = signposter.beginInterval("CalculateDifference", id: signposter.makeSignpostID())
+            defer { signposter.endInterval("CalculateDifference", interval) }
             mask = nil
             maskError = nil
             let a = left

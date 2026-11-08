@@ -6,6 +6,7 @@ import FolderCore
 import GitCore
 import IPCBridge
 import Observation
+import os
 import UniformTypeIdentifiers
 
 enum ComparisonContent: Sendable {
@@ -221,6 +222,8 @@ private struct SavedWorkspace: Codable {
 
 @MainActor @Observable
 final class WorkspaceModel {
+    private let loadSignposter = OSSignposter(
+        subsystem: "io.github.michaeldadi.vellograph", category: "WorkspaceLoad")
     private static let isUITesting = ProcessInfo.processInfo.environment["VELLOGRAPH_UI_TESTING"] == "1"
     private let preferences: UserDefaults
     var tabs: [ComparisonTab] = []
@@ -586,6 +589,8 @@ final class WorkspaceModel {
             await openDeepLink(urls[0])
             return selection
         }
+        let interval = loadSignposter.beginInterval("OpenComparison", id: loadSignposter.makeSignpostID())
+        defer { loadSignposter.endInterval("OpenComparison", interval) }
         beginLoading()
         defer { endLoading() }
         let candidates = urls.filter { $0.isFileURL }

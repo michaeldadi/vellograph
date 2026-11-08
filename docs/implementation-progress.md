@@ -137,8 +137,12 @@ local use, hosted CI, and release qualification.
   items and opens the comparison in the app. The generated bundle property
   list and Xcode build were verified. `NSPerformService` delivered two
   disposable file URLs through the registered service and opened their
-  comparison in the running app. The Finder context-menu presentation still
-  needs a native check.
+  comparison in the running app. The Finder context menu now shows the
+  installed app's “Compare with Vellograph” Service after unregistering two
+  disposable update-test app copies from Launch Services. Invoking it on two
+  disposable text files opened a one-change comparison in the installed app;
+  the test tab and files were removed. The Action extension is also visible as
+  a Quick Action in that menu.
 - A separate read-only Action extension is embedded for local file, folder,
   and image comparisons in a host app. It presents a bounded quick preview and
   lets the user choose a second item when the host supplies only one. The first
@@ -540,7 +544,16 @@ local use, hosted CI, and release qualification.
   signed local Release build was installed and reopened with the prior tabs.
   Hosted macOS 27 run `42513435760` at `c92ff06` passed both build-and-test
   and native-ui jobs. A later permission-failure rollback test passes locally;
-  its hosted result is pending.
+  hosted run `42514153875` at `7f0f66b` passed both jobs.
+- `OSSignposter` intervals now mark comparison loading, image preparation,
+  and explicit image difference calculation. The signed installed Release app
+  was captured with Xcode's Logging template on macOS 27.2. A single 8.9 MiB
+  per-side text pair loaded in 692.69 ms; the 4096² image pair prepared in
+  13.73 ms and calculated its exact difference in 439.71 ms. The native app
+  showed one text change and 12,621,444 changed image pixels. These are
+  operation intervals, not first-frame or scrolling measurements; see
+  `performance-baseline.md`. The full Swift package suite and signed Release
+  build passed locally after the instrumentation change.
 
 ## Next verification and implementation
 
