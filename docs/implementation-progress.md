@@ -508,6 +508,10 @@ local use, hosted CI, and release qualification.
   replying; the client returns `invalidMessage` promptly. The full Swift
   package suite and signed Release build pass locally with that test. A real
   app-process interruption and wrong-user peer workflow remain open.
+- Session restore now reports how many saved comparisons it skipped when a
+  source file has disappeared. The existing native restore test checks that
+  message before reopening the comparison from Recents and checking its error.
+  This updated native workflow is pending a hosted run.
 
 ## Next verification and implementation
 

@@ -699,7 +699,13 @@ final class WorkspaceModel {
         didRestore = true
         guard let data = preferences.data(forKey: "savedWorkspace.v1"),
               let saved = try? JSONDecoder().decode(SavedWorkspace.self, from: data) else { return }
-        for paths in saved.tabs where !paths.isEmpty && paths.allSatisfy({ FileManager.default.fileExists(atPath: $0) }) {
+        var unavailableCount = 0
+        for paths in saved.tabs {
+            guard !paths.isEmpty,
+                  paths.allSatisfy({ FileManager.default.fileExists(atPath: $0) }) else {
+                unavailableCount += 1
+                continue
+            }
             await open(urls: paths.map { URL(fileURLWithPath: $0) })
         }
         if saved.selectedIndex == -1 {
@@ -708,6 +714,9 @@ final class WorkspaceModel {
             selection = tabs[saved.selectedIndex].id
         }
         saveSession()
+        if unavailableCount > 0 {
+            noticeMessage = "\(unavailableCount) saved \(unavailableCount == 1 ? "comparison was" : "comparisons were") skipped because a source is no longer available."
+        }
     }
 
     @discardableResult
