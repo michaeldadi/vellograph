@@ -53,6 +53,8 @@ struct FolderComparisonView: View {
 
     private var filterSignature: String { ignoredNames + "\u{0}" + ignoredPatterns }
 
+    private var differenceCount: Int { entries.filter { $0.state != .equal }.count }
+
     private func matchesState(_ entry: FolderDifference) -> Bool {
         switch stateFilter {
         case .all: true
@@ -70,7 +72,7 @@ struct FolderComparisonView: View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("\(entries.filter { $0.state != .equal }.count) differences")
+                    Text(differenceCount == 1 ? "1 difference" : "\(differenceCount) differences")
                         .font(.headline)
                     Spacer()
                     Picker("Direction", selection: $sourceIsLeft) {
@@ -194,7 +196,7 @@ struct FolderComparisonView: View {
                     Text("Review \(plan.mode.rawValue)").font(.title2.bold())
                     Text("From: \(plan.sourceRoot.path)")
                     Text("To: \(plan.destinationRoot.path)")
-                    Text("\(plan.actions.count) actions. Replaced or removed destination items are kept in a recovery folder.")
+                    Text("\(plan.actions.count) \(plan.actions.count == 1 ? "action" : "actions"). Replaced or removed destination items are kept in a recovery folder.")
                         .foregroundStyle(.secondary)
                     List(plan.actions) { action in
                         HStack {

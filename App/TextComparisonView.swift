@@ -201,7 +201,8 @@ struct TextComparisonView: View {
             }
             Divider()
             HStack {
-                Text("\(displayed.diff.hunks.count) changes")
+                Text(displayed.diff.hunks.count == 1
+                     ? "1 change" : "\(displayed.diff.hunks.count) changes")
                     .foregroundStyle(.secondary)
                 if processing { ProgressView().controlSize(.small) }
                 if let range = sourceComparison.gitRange {

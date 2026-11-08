@@ -194,7 +194,8 @@ struct RepositoryView: View {
         let byPath = Dictionary(entries.map { ($0.path, $0) }, uniquingKeysWith: { first, _ in first })
         return VStack(spacing: 0) {
             HStack {
-                Text("\(entries.count) of \(status.count) changed items").font(.headline)
+                Text("\(entries.count) of \(status.count) \(status.count == 1 ? "changed item" : "changed items")")
+                    .font(.headline)
                 Spacer()
                 Text("Compare staged or working-copy changes")
                     .foregroundStyle(.secondary)
@@ -327,7 +328,7 @@ struct RepositoryView: View {
                         Text(commit.subject).font(.headline)
                         Text(commit.id).font(.system(.caption, design: .monospaced))
                             .foregroundStyle(.secondary)
-                        Text("\(changedPaths.count) changed files")
+                        Text("\(changedPaths.count) \(changedPaths.count == 1 ? "changed file" : "changed files")")
                             .foregroundStyle(.secondary)
                     }
                     .padding(12)
@@ -442,7 +443,7 @@ struct RepositoryView: View {
                 .padding(.horizontal, 12)
             Divider().padding(.top, 8)
             if let resolvedFrom, let resolvedTo {
-                Text("\(entries.count) of \(revisionChanges.count) changes · \(resolvedFrom.prefix(8)) → \(resolvedTo.prefix(8))")
+                Text("\(entries.count) of \(revisionChanges.count) \(revisionChanges.count == 1 ? "change" : "changes") · \(resolvedFrom.prefix(8)) → \(resolvedTo.prefix(8))")
                     .font(.headline)
                     .padding(12)
                 changeControls(search: $revisionSearch) {

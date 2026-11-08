@@ -41,7 +41,7 @@ import XCTest
         app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
         app.launchEnvironment["VELLOGRAPH_UI_TEST_SUITE"] = suite
         try launchWithFixtures([left, right], in: app)
-        XCTAssertTrue(app.staticTexts["1 changes"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["1 change"].waitForExistence(timeout: 10))
         app.buttons["Show welcome"].click()
         XCTAssertTrue(app.staticTexts["Recent Comparisons"].waitForExistence(timeout: 5))
         let recent = app.buttons.matching(NSPredicate(
@@ -49,12 +49,12 @@ import XCTest
         )).firstMatch
         XCTAssertTrue(recent.exists)
         recent.click()
-        XCTAssertTrue(app.staticTexts["1 changes"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["1 change"].waitForExistence(timeout: 10))
 
         app.terminate()
         app.launchEnvironment.removeValue(forKey: "VELLOGRAPH_UI_TEST_PATHS")
         app.launch()
-        XCTAssertTrue(app.staticTexts["1 changes"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["1 change"].waitForExistence(timeout: 10))
         app.terminate()
         try FileManager.default.removeItem(at: right)
         app.launch()
@@ -121,7 +121,7 @@ import XCTest
         app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
         try launchWithFixtures([left, right], in: app)
 
-        XCTAssertTrue(app.staticTexts["1 changes"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["1 change"].waitForExistence(timeout: 10))
         let next = app.buttons["Next"]
         XCTAssertTrue(next.exists)
         next.click()
@@ -222,11 +222,11 @@ import XCTest
         XCTAssertEqual(baseRole.value as? String, "0-base.txt")
         XCTAssertEqual(app.popUpButtons.element(boundBy: 2).value as? String, "2-remote.txt")
         confirm.click()
-        XCTAssertTrue(app.staticTexts["0 of 1 conflicts resolved"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["0 of 1 conflict resolved"].waitForExistence(timeout: 10))
         let build = app.buttons["Build Output"]
         XCTAssertFalse(build.isEnabled)
         app.typeKey("2", modifierFlags: [.command])
-        XCTAssertTrue(app.staticTexts["1 of 1 conflicts resolved"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["1 of 1 conflict resolved"].waitForExistence(timeout: 5))
         XCTAssertTrue(build.isEnabled)
         app.typeKey(XCUIKeyboardKey.return.rawValue, modifierFlags: [.command, .shift])
         let output = app.textViews["Merged output"]
@@ -290,7 +290,7 @@ import XCTest
         let app = XCUIApplication()
         app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
         try launchWithFixtures([repository], in: app)
-        XCTAssertTrue(app.staticTexts["1 of 1 changed items"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["1 of 1 changed item"].waitForExistence(timeout: 10))
 
         app.radioButtons["History"].click()
         let commit = app.buttons.matching(NSPredicate(
@@ -298,7 +298,7 @@ import XCTest
         )).firstMatch
         XCTAssertTrue(commit.waitForExistence(timeout: 10))
         commit.click()
-        XCTAssertTrue(app.staticTexts["1 changed files"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["1 changed file"].waitForExistence(timeout: 10))
         app.buttons["File History"].click()
         XCTAssertTrue(app.staticTexts["File History · guide.txt"].waitForExistence(timeout: 10))
         app.buttons["Done"].click()
@@ -306,7 +306,7 @@ import XCTest
         app.radioButtons["Compare Revisions"].click()
         app.buttons["Compare Revisions"].click()
         let changes = app.staticTexts.matching(NSPredicate(
-            format: "value BEGINSWITH %@", "1 of 1 changes"
+            format: "value BEGINSWITH %@", "1 of 1 change"
         )).firstMatch
         XCTAssertTrue(changes.waitForExistence(timeout: 10))
 
@@ -355,7 +355,7 @@ import XCTest
         app.buttons["Preview Copy Selected"].click()
         XCTAssertTrue(app.staticTexts["Review Copy Selected"].waitForExistence(timeout: 10))
         app.buttons["Apply Reviewed Changes"].click()
-        XCTAssertTrue(app.staticTexts["1 differences"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["1 difference"].waitForExistence(timeout: 10))
         XCTAssertEqual(try String(contentsOf: destination, encoding: .utf8), "new\n")
         XCTAssertEqual(try String(contentsOf: destinationOnly, encoding: .utf8), "original\n")
 
@@ -366,6 +366,40 @@ import XCTest
         XCTAssertTrue(app.staticTexts["Folder Operation Failed"].waitForExistence(timeout: 10))
         XCTAssertEqual(try String(contentsOf: destinationOnly, encoding: .utf8), "external edit\n")
         XCTAssertEqual(try String(contentsOf: hidden, encoding: .utf8), "hidden\n")
+    }
+
+    func testTextLayoutsWhitespaceAndMissingSourceRefresh() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let left = folder.appendingPathComponent("a.txt")
+        let right = folder.appendingPathComponent("b.txt")
+        try Data("alpha  beta\n".utf8).write(to: left)
+        try Data("alpha beta\n".utf8).write(to: right)
+
+        let app = XCUIApplication()
+        app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
+        try launchWithFixtures([left, right], in: app)
+        XCTAssertTrue(app.staticTexts["1 change"].waitForExistence(timeout: 10))
+        for layout in ["Fluid", "Unified", "Blocks"] {
+            let control = app.radioButtons[layout]
+            control.click()
+            XCTAssertEqual((control.value as? NSNumber)?.intValue, 1)
+        }
+        app.menuButtons["Compare Options"].click()
+        app.menuItems["Ignore Whitespace"].click()
+        XCTAssertTrue(app.staticTexts["0 changes"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["Resolve…"].isEnabled)
+        app.menuButtons["Compare Options"].click()
+        app.menuItems["Ignore Whitespace"].click()
+        XCTAssertTrue(app.staticTexts["1 change"].waitForExistence(timeout: 10))
+
+        app.buttons["Pause Live Updates"].click()
+        try FileManager.default.removeItem(at: right)
+        app.buttons["Refresh"].click()
+        XCTAssertTrue(app.staticTexts["Comparison Error"].waitForExistence(timeout: 10))
+        XCTAssertEqual(try String(contentsOf: left, encoding: .utf8), "alpha  beta\n")
     }
 
     private func launchWithFixtures(_ urls: [URL], in app: XCUIApplication,

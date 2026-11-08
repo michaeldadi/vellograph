@@ -22,7 +22,7 @@ struct MergeComparisonView: View {
                     .font(.headline)
                 Spacer()
                 if let mergeResult {
-                    Text("\(choices.count) of \(mergeResult.conflicts.count) conflicts resolved")
+                    Text("\(choices.count) of \(mergeResult.conflicts.count) \(mergeResult.conflicts.count == 1 ? "conflict" : "conflicts") resolved")
                         .foregroundStyle(.secondary)
                 }
             }
