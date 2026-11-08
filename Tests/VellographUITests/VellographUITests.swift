@@ -398,7 +398,7 @@ import XCTest
         try Data("final state\n".utf8).write(to: right, options: .atomic)
         XCTAssertTrue(app.staticTexts["1 change"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(
-            format: "label CONTAINS %@", "final state"
+            format: "value CONTAINS %@", "final state"
         )).firstMatch.waitForExistence(timeout: 10))
         XCTAssertEqual(try String(contentsOf: left, encoding: .utf8), "same\n")
     }
