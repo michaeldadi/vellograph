@@ -111,7 +111,8 @@ local use, hosted CI, and release qualification.
   replaced with identical bytes but a different inode is restored rather than
   accepted as the previewed item. Rollback also keeps a later external file
   with identical bytes and retains the original in recovery for manual review.
-  Stage and recovery folders have mode 0700.
+  A permission failure on a later nested replacement rolls back an earlier
+  successful replacement. Stage and recovery folders have mode 0700.
   Staging still uses path-based copying. Crash recovery, same-directory entry
   swaps during empty-directory removal, and broader failure-injection remain
   open; these tests do not qualify folder mutation as fully race-free. The full
@@ -534,6 +535,12 @@ local use, hosted CI, and release qualification.
   so an earlier request finishing cannot hide progress while another is still
   running. The build passes locally; concurrent-request UI verification remains
   open.
+- Folder destination writes and rollback now use pinned directory handles and
+  exclusive renames, with the race and identity checks described above. The
+  signed local Release build was installed and reopened with the prior tabs.
+  Hosted macOS 27 run `42513435760` at `c92ff06` passed both build-and-test
+  and native-ui jobs. A later permission-failure rollback test passes locally;
+  its hosted result is pending.
 
 ## Next verification and implementation
 

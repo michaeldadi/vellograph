@@ -226,6 +226,34 @@ import Testing
     }
 }
 
+@Test func permissionFailureRollsBackEarlierReplacement() throws {
+    let (root, source, destination) = try folders()
+    let sourceSub = source.appendingPathComponent("sub", isDirectory: true)
+    let destinationSub = destination.appendingPathComponent("sub", isDirectory: true)
+    defer {
+        try? FileManager.default.setAttributes([.posixPermissions: 0o700],
+                                               ofItemAtPath: destinationSub.path)
+        try? FileManager.default.removeItem(at: root)
+    }
+    try FileManager.default.createDirectory(at: sourceSub, withIntermediateDirectories: false)
+    try FileManager.default.createDirectory(at: destinationSub, withIntermediateDirectories: false)
+    for (name, sourceParent, destinationParent) in [
+        ("a.txt", source, destination), ("b.txt", sourceSub, destinationSub)
+    ] {
+        try Data("source-\(name)".utf8).write(to: sourceParent.appendingPathComponent(name))
+        try Data("old-\(name)".utf8).write(to: destinationParent.appendingPathComponent(name))
+    }
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["a.txt", "sub/b.txt"])
+    try FileManager.default.setAttributes([.posixPermissions: 0o500],
+                                          ofItemAtPath: destinationSub.path)
+    #expect(throws: POSIXError.self) { try plan.apply() }
+    #expect(try String(contentsOf: destination.appendingPathComponent("a.txt"),
+                       encoding: .utf8) == "old-a.txt")
+    #expect(try String(contentsOf: destinationSub.appendingPathComponent("b.txt"),
+                       encoding: .utf8) == "old-b.txt")
+}
+
 @Test func replacingDestinationRootInvalidatesIdenticalLookingPreview() throws {
     let (root, source, destination) = try folders()
     defer { try? FileManager.default.removeItem(at: root) }
