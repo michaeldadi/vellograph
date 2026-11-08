@@ -350,9 +350,11 @@ local use, hosted CI, and release qualification.
   loss of accessibility authorization affected the remaining cases. The
   earlier focused and full passes remain recorded above; this latest rerun is
   not a passing release gate.
-- A separate `native-ui` job now invokes the eight Xcode UI tests on the
-  hosted macOS 27 runner with parallel UI execution disabled. It remains
-  unqualified until the hosted job completes successfully.
+- A separate `native-ui` job invokes the eight Xcode UI tests on the hosted
+  macOS 27 runner with parallel UI execution disabled. Its first run failed;
+  `xcodebuild -quiet` did not include the failing assertion in the job log.
+  The workflow now prints the `.xcresult` summary and retains the result bundle
+  for a failed run. The hosted UI gate remains unqualified.
 
 ## Next verification and implementation
 
