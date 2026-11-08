@@ -81,47 +81,54 @@ struct ImageComparisonView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Picker("Mode", selection: $mode) {
-                    ForEach(Mode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            VStack(spacing: 6) {
+                HStack(spacing: 10) {
+                    Picker("Mode", selection: $mode) {
+                        ForEach(Mode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .accessibilityLabel("Image comparison mode")
+                    .frame(width: 390)
+                    Menu("View Mode") {
+                        Button("Two Up") { mode = .twoUp }
+                            .keyboardShortcut("1", modifiers: [.command, .option])
+                        Button("One Up") { mode = .oneUp }
+                            .keyboardShortcut("2", modifiers: [.command, .option])
+                        Button("Split") { mode = .split }
+                            .keyboardShortcut("3", modifiers: [.command, .option])
+                        Button("Difference") { mode = .difference }
+                            .keyboardShortcut("4", modifiers: [.command, .option])
+                    }
+                    Spacer()
+                    Button("Fit") {
+                        zoom = 1
+                        pan = .zero
+                    }
+                    .disabled(zoom == 1 && pan == .zero)
+                    Button("Actual Pixels") {
+                        guard let canvas else { return }
+                        let viewport = viewportGeometry(canvas: canvas, size: viewportSize)
+                        zoom = min(64, max(0.001, Double(pixelLength) / viewport.fitScale))
+                        pan = .zero
+                    }
+                    .disabled(canvas == nil || viewportSize == .zero)
+                    Button("Navigator", systemImage: "map") { showNavigator.toggle() }
+                        .tint(showNavigator ? .accentColor : .secondary)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .accessibilityLabel("Image comparison mode")
-                .frame(width: 390)
-                Menu("View Mode") {
-                    Button("Two Up") { mode = .twoUp }
-                        .keyboardShortcut("1", modifiers: [.command, .option])
-                    Button("One Up") { mode = .oneUp }
-                        .keyboardShortcut("2", modifiers: [.command, .option])
-                    Button("Split") { mode = .split }
-                        .keyboardShortcut("3", modifiers: [.command, .option])
-                    Button("Difference") { mode = .difference }
-                        .keyboardShortcut("4", modifiers: [.command, .option])
+                HStack(spacing: 10) {
+                    Text("Zoom").font(.caption).foregroundStyle(.secondary)
+                    Slider(value: Binding(get: { log2(zoom) },
+                                          set: { zoom = pow(2.0, $0) }), in: -10...6)
+                        .frame(width: 180)
+                        .accessibilityLabel("Image zoom relative to fit")
+                    Text("Fit ×\(Int((zoom * 100).rounded()))%")
+                        .font(.system(.caption, design: .monospaced))
+                        .frame(width: 85, alignment: .trailing)
+                    Spacer()
                 }
-                Spacer()
-                Button("Fit") {
-                    zoom = 1
-                    pan = .zero
-                }
-                .disabled(zoom == 1 && pan == .zero)
-                Button("Actual Pixels") {
-                    guard let canvas else { return }
-                    let viewport = viewportGeometry(canvas: canvas, size: viewportSize)
-                    zoom = min(64, max(0.001, Double(pixelLength) / viewport.fitScale))
-                    pan = .zero
-                }
-                .disabled(canvas == nil || viewportSize == .zero)
-                Button("Navigator", systemImage: "map") { showNavigator.toggle() }
-                    .tint(showNavigator ? .accentColor : .secondary)
-                Slider(value: Binding(get: { log2(zoom) },
-                                      set: { zoom = pow(2.0, $0) }), in: -10...6)
-                    .frame(width: 125)
-                    .accessibilityLabel("Image zoom relative to fit")
-                Text("Fit ×\(Int((zoom * 100).rounded()))%")
-                    .font(.system(.caption, design: .monospaced))
-                    .frame(width: 85, alignment: .trailing)
-            }.padding(12)
+            }
+            .padding(12)
             if mode != .twoUp {
                 HStack(spacing: 12) {
                     if mode == .oneUp || mode == .difference {

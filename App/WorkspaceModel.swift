@@ -222,6 +222,7 @@ private struct SavedWorkspace: Codable {
 @MainActor @Observable
 final class WorkspaceModel {
     private static let isUITesting = ProcessInfo.processInfo.environment["VELLOGRAPH_UI_TESTING"] == "1"
+    private let preferences: UserDefaults
     var tabs: [ComparisonTab] = []
     var selection: UUID?
     var recentComparisons: [RecentComparison] = []
@@ -237,12 +238,18 @@ final class WorkspaceModel {
     private var pendingMergeTabs: Set<UUID> = []
 
     init() {
-        guard !Self.isUITesting else { return }
-        if let data = UserDefaults.standard.data(forKey: "recentComparisons.v1"),
+        if Self.isUITesting {
+            let suite = ProcessInfo.processInfo.environment["VELLOGRAPH_UI_TEST_SUITE"]
+                ?? "io.github.michaeldadi.vellograph.ui-test.\(UUID().uuidString)"
+            preferences = UserDefaults(suiteName: suite)!
+        } else {
+            preferences = .standard
+        }
+        if let data = preferences.data(forKey: "recentComparisons.v1"),
            let recent = try? JSONDecoder().decode([RecentComparison].self, from: data) {
             recentComparisons = recent
         }
-        if let data = UserDefaults.standard.data(forKey: "sourceShelf.v1"),
+        if let data = preferences.data(forKey: "sourceShelf.v1"),
            let saved = try? JSONDecoder().decode(SavedShelf.self, from: data) {
             shelf = saved.entries
             shelfLeftID = saved.leftID
@@ -690,8 +697,7 @@ final class WorkspaceModel {
     func restoreSession() async {
         guard !didRestore else { return }
         didRestore = true
-        guard !Self.isUITesting else { return }
-        guard let data = UserDefaults.standard.data(forKey: "savedWorkspace.v1"),
+        guard let data = preferences.data(forKey: "savedWorkspace.v1"),
               let saved = try? JSONDecoder().decode(SavedWorkspace.self, from: data) else { return }
         for paths in saved.tabs where !paths.isEmpty && paths.allSatisfy({ FileManager.default.fileExists(atPath: $0) }) {
             await open(urls: paths.map { URL(fileURLWithPath: $0) })
@@ -714,19 +720,17 @@ final class WorkspaceModel {
     }
 
     private func remember(_ urls: [URL], title: String, kind: RecentKind) {
-        guard !Self.isUITesting else { return }
         let paths = urls.map { $0.standardizedFileURL.path }
         recentComparisons.removeAll { $0.paths == paths }
         recentComparisons.insert(RecentComparison(id: UUID(), paths: paths, title: title,
                                                   openedAt: .now, kind: kind), at: 0)
         if recentComparisons.count > 20 { recentComparisons.removeLast(recentComparisons.count - 20) }
         if let data = try? JSONEncoder().encode(recentComparisons) {
-            UserDefaults.standard.set(data, forKey: "recentComparisons.v1")
+            preferences.set(data, forKey: "recentComparisons.v1")
         }
     }
 
     private func saveSession() {
-        guard !Self.isUITesting else { return }
         let persisted = tabs.filter { !$0.sources.isEmpty && !$0.sources.contains(where: isManagedSnapshot) }
         let selectedIndex = selection.flatMap { selected in
             persisted.firstIndex { $0.id == selected }
@@ -736,7 +740,7 @@ final class WorkspaceModel {
             selectedIndex: selectedIndex
         )
         if let data = try? JSONEncoder().encode(saved) {
-            UserDefaults.standard.set(data, forKey: "savedWorkspace.v1")
+            preferences.set(data, forKey: "savedWorkspace.v1")
         }
     }
 
@@ -828,10 +832,9 @@ final class WorkspaceModel {
     }
 
     private func saveShelf() {
-        guard !Self.isUITesting else { return }
         let state = SavedShelf(entries: shelf, leftID: shelfLeftID, rightID: shelfRightID)
         if let data = try? JSONEncoder().encode(state) {
-            UserDefaults.standard.set(data, forKey: "sourceShelf.v1")
+            preferences.set(data, forKey: "sourceShelf.v1")
         }
     }
 

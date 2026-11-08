@@ -56,8 +56,8 @@ uncommitted.
   both samples. Nine manual image anchors, X/Y offsets, and Vision translation
   registration now use one canvas for the overlay, mask, and inspector. On a
   shifted 128-pixel fixture, Auto Align found X=8/Y=-5; the visible difference
-  count fell from 7,064 to 3,248, and aligned A/B samples matched. Perspective
-  alignment, pan/lock edge cases, and larger image performance remain open.
+  count fell from 7,064 to 3,248, and aligned A/B samples matched. Pan/lock
+  edge cases and larger image performance remain open.
   Difference masks now offer red, magenta, cyan, and yellow, with a native
   screenshot check of the two-row controls and yellow overlay. A navigator now
   displays the shared viewport and permits direct repositioning. At 400% zoom,
@@ -300,11 +300,18 @@ uncommitted.
   original image; manual offsets are disabled while a perspective preview is
   active. A warped icon fixture reduced changed pixels by more than 20% in a
   repeatable core test, and a native UI test verified the preview and Reset.
-  The six-case native UI suite and all Swift package tests passed after this
+  The seven-case native UI suite and all Swift package tests passed after this
   change, and the signed app bundle passed verification before installation
   in `~/Applications`.
   This does not establish reliability on arbitrary photographs or large
   images; those remain open image acceptance cases.
+- The image toolbar now has separate mode and zoom rows at the minimum window
+  width. A native UI test checked that Actual Pixels, Navigator, and
+  Perspective Align stay within the window without crossing each other.
+- Native UI tests now use a separate preference suite, leaving the real app's
+  recent comparisons and shelf untouched. A test reopened a recent text pair,
+  restored its selected tab after relaunch, then removed a source and confirmed
+  the welcome view showed an error when reopening that stale recent item.
 
 ## Next verification and implementation
 

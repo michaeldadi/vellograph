@@ -23,6 +23,46 @@ import XCTest
         XCTAssertTrue(openButton.waitForExistence(timeout: 5))
     }
 
+    func testRecentComparisonRestoresAndMissingSourceReportsError() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")
+        let suite = "io.github.michaeldadi.vellograph.ui-test.\(UUID().uuidString)"
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: folder)
+            UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite)
+        }
+        let left = folder.appendingPathComponent("a.txt")
+        let right = folder.appendingPathComponent("b.txt")
+        try Data("old\n".utf8).write(to: left)
+        try Data("new\n".utf8).write(to: right)
+
+        let app = XCUIApplication()
+        app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
+        app.launchEnvironment["VELLOGRAPH_UI_TEST_SUITE"] = suite
+        app.launch()
+        openFixtureFolder(folder, in: app)
+        XCTAssertTrue(app.staticTexts["1 changes"].waitForExistence(timeout: 10))
+        app.buttons["Show welcome"].click()
+        XCTAssertTrue(app.staticTexts["Recent Comparisons"].waitForExistence(timeout: 5))
+        let recent = app.buttons.matching(NSPredicate(
+            format: "label MATCHES %@", "^(a\\.txt ↔ b\\.txt|b\\.txt ↔ a\\.txt)$"
+        )).firstMatch
+        XCTAssertTrue(recent.exists)
+        recent.click()
+        XCTAssertTrue(app.staticTexts["1 changes"].waitForExistence(timeout: 10))
+
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.staticTexts["1 changes"].waitForExistence(timeout: 10))
+        app.terminate()
+        try FileManager.default.removeItem(at: right)
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Recent Comparisons"].waitForExistence(timeout: 10))
+        recent.click()
+        XCTAssertTrue(app.staticTexts["Unable to Open"].waitForExistence(timeout: 10))
+    }
+
     func testOpenTwoTextFilesAndNavigateChange() throws {
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")
@@ -56,6 +96,15 @@ import XCTest
         app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
         app.launch()
         openFixtureFolder(folder, in: app)
+
+        let window = app.windows.firstMatch
+        let navigator = app.buttons["Navigator"]
+        let actualPixels = app.buttons["Actual Pixels"]
+        XCTAssertTrue(navigator.waitForExistence(timeout: 5))
+        XCTAssertLessThanOrEqual(navigator.frame.maxX, window.frame.maxX - 8)
+        XCTAssertLessThanOrEqual(actualPixels.frame.maxX, navigator.frame.minX)
+        XCTAssertLessThanOrEqual(app.buttons["Perspective Align"].frame.maxX,
+                                 window.frame.maxX - 8)
 
         for mode in ["One Up", "Split", "Difference", "Two Up"] {
             let button = app.radioButtons[mode]
