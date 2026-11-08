@@ -414,8 +414,15 @@ local use, hosted CI, and release qualification.
   deep signature checks passed, and it launched afterward.
 - A twelfth native UI case is prepared for text FSEvents refresh, pause/resume,
   and two rapid edits that should display the final file contents. The Swift
-  package suite and signed Xcode test build passed locally; hosted execution
-  is still required before recording the workflow as passed.
+  package suite and signed Xcode test build passed locally. Its first hosted
+  run failed the live-refresh assertion. A direct installed-app check found
+  that FSEvents reports canonical `/private/tmp` paths for files opened through
+  `/tmp`, while the view filtered events using the original `/tmp` path. The
+  monitor now reports both canonical paths and the original watched aliases.
+  A standalone FSEvents probe showed both path forms. In the installed signed
+  build, a file edit updated the text without manual Refresh, Pause held the
+  old result, Resume caught up, and two rapid edits displayed the final text.
+  Hosted execution of the corrected watcher is still required.
 - A hosted run after the workspace-focus change passed the build job but had
   one native UI failure: the three-way merge test read its output file before
   the Save action had visibly completed. The test now waits for the app's
