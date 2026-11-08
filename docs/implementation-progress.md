@@ -492,8 +492,18 @@ local use, hosted CI, and release qualification.
   for an identical pair. The disposable tab was closed and the previous app
   kept in a guarded backup. Full-resolution large differences, pixel
   inspection, and alignment remain open. The first hosted 14-case native UI
-  run failed only because the new test's fixture path included `Tests/Tests`;
-  the path is corrected and awaiting a fresh hosted pass.
+  run failed only because the new test's fixture path included `Tests/Tests`.
+  After correcting the path, run `42507506471` passed all 14 native cases and
+  its build-and-test job.
+- The IPC server now awaits its async request handler without blocking a
+  dispatch worker on a semaphore. It records the socket inode created by
+  bind and unlinks only that socket at shutdown; a test replaced the path
+  with a regular file and verified that stopping the server preserved the
+  replacement. The full Swift package suite and signed Release build passed.
+  After a guarded install, the bundled CLI opened a disposable two-file diff
+  in the running app, which showed the expected one-change result. The test
+  tab and files were removed. Interrupted-response and wrong-user peer
+  workflows remain open.
 
 ## Next verification and implementation
 

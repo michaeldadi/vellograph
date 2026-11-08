@@ -170,7 +170,7 @@ changes originate in `project.yml` and are reviewed together.
 ## Known dependencies and release blockers
 
 The current public repository and draft PR contain a broad implementation,
-and hosted macOS 27 CI has passed 13 native UI cases. Those cases cover only
+and hosted macOS 27 CI has passed 14 native UI cases. Those cases cover only
 part of the checklist. Descriptor-safe folder mutation, larger image handling,
 app-level performance gates, several real host integrations, and final-package
 update tests remain. A Developer ID Application identity is not currently

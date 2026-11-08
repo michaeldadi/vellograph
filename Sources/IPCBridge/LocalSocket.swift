@@ -6,6 +6,7 @@ public final class LocalSocketServer: @unchecked Sendable {
     private let handler: @Sendable (IPCRequest) async -> IPCResponse
     private let lock = NSLock()
     private var listener: Int32 = -1
+    private var listenerIdentity: SocketIdentity?
 
     public init(path: URL = IPCPaths.socket,
                 handler: @escaping @Sendable (IPCRequest) async -> IPCResponse) {
@@ -19,11 +20,13 @@ public final class LocalSocketServer: @unchecked Sendable {
         try SocketIO.removeStaleSocket(at: path, address: address)
         let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
         guard fd >= 0 else { throw SocketIO.systemError() }
+        var boundIdentity: SocketIdentity?
         do {
             try SocketIO.disableSIGPIPE(fd)
             try SocketIO.withAddress(address) { pointer, length in
                 guard Darwin.bind(fd, pointer, length) == 0 else { throw SocketIO.systemError() }
             }
+            boundIdentity = try SocketIO.socketIdentity(at: path)
             guard chmod(path.path, 0o600) == 0 else { throw SocketIO.systemError() }
             guard Darwin.listen(fd, 16) == 0 else { throw SocketIO.systemError() }
             lock.lock()
@@ -32,10 +35,11 @@ public final class LocalSocketServer: @unchecked Sendable {
                 throw IPCBridgeError.alreadyRunning
             }
             listener = fd
+            listenerIdentity = boundIdentity
             lock.unlock()
         } catch {
             Darwin.close(fd)
-            unlink(path.path)
+            if let boundIdentity { SocketIO.removeSocket(at: path, matching: boundIdentity) }
             throw error
         }
         DispatchQueue.global(qos: .userInitiated).async { [self] in acceptLoop(fd) }
@@ -44,12 +48,14 @@ public final class LocalSocketServer: @unchecked Sendable {
     public func stop() {
         lock.lock()
         let fd = listener
+        let identity = listenerIdentity
         listener = -1
+        listenerIdentity = nil
         lock.unlock()
         guard fd >= 0 else { return }
         Darwin.shutdown(fd, SHUT_RDWR)
         Darwin.close(fd)
-        unlink(path.path)
+        if let identity { SocketIO.removeSocket(at: path, matching: identity) }
     }
 
     deinit { stop() }
@@ -58,13 +64,13 @@ public final class LocalSocketServer: @unchecked Sendable {
         while true {
             let client = Darwin.accept(fd, nil, nil)
             if client < 0 { break }
-            DispatchQueue.global(qos: .userInitiated).async { [self] in
-                handleClient(client)
+            Task.detached(priority: .userInitiated) { [self] in
+                await handleClient(client)
             }
         }
     }
 
-    private func handleClient(_ client: Int32) {
+    private func handleClient(_ client: Int32) async {
         defer { Darwin.close(client) }
         do {
             try SocketIO.disableSIGPIPE(client)
@@ -73,15 +79,7 @@ public final class LocalSocketServer: @unchecked Sendable {
             let request = try JSONDecoder().decode(IPCRequest.self, from: data)
             guard request.version == 1 else { throw IPCBridgeError.invalidMessage }
 
-            let box = ResponseBox()
-            let ready = DispatchSemaphore(value: 0)
-            let handler = self.handler
-            Task {
-                box.set(await handler(request))
-                ready.signal()
-            }
-            ready.wait()
-            let response = box.get() ?? IPCResponse(status: 2, message: "No application response.")
+            let response = await handler(request)
             try SocketIO.writeLine(client, value: response)
         } catch {
             try? SocketIO.writeLine(client, value: IPCResponse(status: 2,
@@ -136,18 +134,9 @@ public enum LocalSocketClient {
     }
 }
 
-private final class ResponseBox: @unchecked Sendable {
-    private let lock = NSLock()
-    private var response: IPCResponse?
-
-    func set(_ value: IPCResponse) {
-        lock.lock(); response = value; lock.unlock()
-    }
-
-    func get() -> IPCResponse? {
-        lock.lock(); defer { lock.unlock() }
-        return response
-    }
+private struct SocketIdentity: Equatable {
+    let device: dev_t
+    let inode: ino_t
 }
 
 private enum SocketIO {
@@ -213,7 +202,24 @@ private enum SocketIO {
         }
         Darwin.close(probe)
         if connected { throw IPCBridgeError.alreadyRunning }
+        guard try socketIdentity(at: url) == SocketIdentity(device: details.st_dev, inode: details.st_ino) else {
+            throw IPCBridgeError.unsafeSocket
+        }
         guard unlink(url.path) == 0 else { throw systemError() }
+    }
+
+    static func socketIdentity(at url: URL) throws -> SocketIdentity {
+        var details = Darwin.stat()
+        guard lstat(url.path, &details) == 0 else { throw systemError() }
+        guard details.st_mode & mode_t(S_IFMT) == mode_t(S_IFSOCK) else {
+            throw IPCBridgeError.unsafeSocket
+        }
+        return SocketIdentity(device: details.st_dev, inode: details.st_ino)
+    }
+
+    static func removeSocket(at url: URL, matching identity: SocketIdentity) {
+        guard (try? socketIdentity(at: url)) == identity else { return }
+        unlink(url.path)
     }
 
     static func disableSIGPIPE(_ fd: Int32) throws {

@@ -54,6 +54,22 @@ import Testing
     #expect(try LocalSocketClient.send(request, path: path).status == 0)
 }
 
+@Test func stoppingServerPreservesAReplacedSocketPath() throws {
+    let directory = URL(fileURLWithPath: "/tmp", isDirectory: true)
+        .appendingPathComponent("vellograph-ipc-replaced-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                                            attributes: [.posixPermissions: 0o700])
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let path = directory.appendingPathComponent("control.sock")
+    let server = LocalSocketServer(path: path) { _ in IPCResponse(status: 0) }
+    try server.start()
+    try FileManager.default.removeItem(at: path)
+    let replacement = Data("keep replacement".utf8)
+    try replacement.write(to: path)
+    server.stop()
+    #expect(try Data(contentsOf: path) == replacement)
+}
+
 @Test func insecureSocketDirectoryIsRejected() throws {
     let directory = URL(fileURLWithPath: "/tmp", isDirectory: true)
         .appendingPathComponent("vellograph-ipc-open-\(UUID().uuidString)", isDirectory: true)
