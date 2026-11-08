@@ -562,9 +562,12 @@ local use, hosted CI, and release qualification.
   scrolling, and peak app-memory measurements remain open.
 - Opening many comparisons could leave the newly selected tab outside the
   visible tab strip. Selection now scrolls to its tab after SwiftUI has laid
-  out the strip. A signed native UI test opens twelve disposable comparison
-  pairs and verifies the last tab becomes visible and hittable; it passed
-  locally on macOS 27.2. The test inputs are removed afterward.
+  out the strip. The Home button stays visible beside the scrolling tabs,
+  and Command–Shift–H opens Welcome. A signed native UI test opens twelve
+  disposable comparison pairs, verifies the last tab and Home button are
+  hittable, and uses the shortcut to reach Welcome. It passed locally on
+  macOS 27.2. The test inputs are removed afterward. Hosted run `42517366685`
+  passed both jobs at `facb873` before the fixed Home button was added.
 
 ## Next verification and implementation
 

@@ -5,11 +5,6 @@ import GitCore
 import SwiftUI
 
 struct WorkspaceView: View {
-    private enum TabScrollTarget: Hashable {
-        case welcome
-        case tab(UUID)
-    }
-
     @Bindable var workspace: WorkspaceModel
 
     var body: some View {
@@ -61,49 +56,51 @@ struct WorkspaceView: View {
     }
 
     private var tabStrip: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal) {
-                HStack(spacing: 4) {
-                    Button {
-                        workspace.showWelcome()
-                    } label: {
-                        Image(systemName: "house")
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Show welcome")
-                    .padding(.horizontal, 10)
-                    .id(TabScrollTarget.welcome)
-                    ForEach(workspace.tabs) { tab in
-                        HStack(spacing: 8) {
-                            Text(tab.title).lineLimit(1)
-                            Button {
-                                workspace.close(tab.id)
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Close \(tab.title)")
-                        }
-                        .font(.caption)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(workspace.selection == tab.id ? Color.accentColor.opacity(0.16) : Color.clear,
-                                    in: RoundedRectangle(cornerRadius: 8))
-                        .onTapGesture { workspace.select(tab.id) }
-                        .id(TabScrollTarget.tab(tab.id))
-                    }
-                }
-                .padding(6)
+        HStack(spacing: 0) {
+            Button {
+                workspace.showWelcome()
+            } label: {
+                Image(systemName: "house")
             }
-            .accessibilityIdentifier("Comparison tabs")
-            .task(id: workspace.selection) {
-                // Newly appended tabs need a layout pass before scrollTo can find them.
-                try? await Task.sleep(for: .milliseconds(50))
-                guard !Task.isCancelled else { return }
-                if let selection = workspace.selection {
-                    proxy.scrollTo(TabScrollTarget.tab(selection), anchor: .trailing)
-                } else {
-                    proxy.scrollTo(TabScrollTarget.welcome, anchor: .leading)
+            .buttonStyle(.plain)
+            .accessibilityLabel("Show welcome")
+            .padding(.horizontal, 12)
+            Divider().frame(height: 22)
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) {
+                    HStack(spacing: 4) {
+                        ForEach(workspace.tabs) { tab in
+                            HStack(spacing: 8) {
+                                Text(tab.title).lineLimit(1)
+                                Button {
+                                    workspace.close(tab.id)
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Close \(tab.title)")
+                            }
+                            .font(.caption)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .background(workspace.selection == tab.id ? Color.accentColor.opacity(0.16) : Color.clear,
+                                        in: RoundedRectangle(cornerRadius: 8))
+                            .onTapGesture { workspace.select(tab.id) }
+                            .id(tab.id)
+                        }
+                    }
+                    .padding(6)
+                }
+                .accessibilityIdentifier("Comparison tabs")
+                .task(id: workspace.selection) {
+                    // Newly appended tabs need a layout pass before scrollTo can find them.
+                    try? await Task.sleep(for: .milliseconds(50))
+                    guard !Task.isCancelled else { return }
+                    if let selection = workspace.selection {
+                        proxy.scrollTo(selection, anchor: .trailing)
+                    } else if let first = workspace.tabs.first {
+                        proxy.scrollTo(first.id, anchor: .leading)
+                    }
                 }
             }
         }

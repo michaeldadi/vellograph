@@ -55,6 +55,9 @@ import XCTest
                        "Newest selected tab should become visible")
         XCTAssertGreaterThanOrEqual(selectedClose.frame.minX, tabs.frame.minX)
         XCTAssertLessThanOrEqual(selectedClose.frame.maxX, tabs.frame.maxX)
+        XCTAssertTrue(app.buttons["Show welcome"].isHittable)
+        app.typeKey("h", modifierFlags: [.command, .shift])
+        XCTAssertTrue(app.staticTexts["Recent Comparisons"].waitForExistence(timeout: 5))
     }
 
     func testRecentComparisonRestoresAndMissingSourceReportsError() throws {

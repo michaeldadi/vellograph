@@ -56,6 +56,8 @@ struct VellographApp: App {
                     .keyboardShortcut("o")
                 Button("Add Clipboard to Shelf") { workspace.addClipboard() }
                     .keyboardShortcut("n")
+                Button("Show Welcome") { workspace.showWelcome() }
+                    .keyboardShortcut("h", modifiers: [.command, .shift])
             }
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates…") { updater.updater.checkForUpdates() }

@@ -104,5 +104,5 @@ bundled `vellograph diff -- <absolute-left> <absolute-right>` command or select
 Difference in the app, then export the `OSSignpostIntervals` table with
 `xcrun xctrace export --input <path>.trace --xpath
 '/trace-toc/run[@number="1"]/data/table[@schema="OSSignpostIntervals"]'`.
-The trace bundles were kept outside the repository under `/tmp` because they
-include process environment and local paths.
+The trace bundles were generated under `/tmp` and removed after extracting
+these timings because they include process environment and local paths.
