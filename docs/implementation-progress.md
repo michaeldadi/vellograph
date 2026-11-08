@@ -440,7 +440,15 @@ local use, hosted CI, and release qualification.
   passed bundle, code-signature, and both Info.plist flag checks. In-app
   tamper/offline behavior and public signing remain open. A public-key verifier
   now checks the appcast signature and both built-app settings in CI; it passed
-  locally against the signed feed and rejected a changed copy.
+  locally against the signed feed and rejected a changed copy. The verified
+  signed Release app was installed in `~/Applications` after a guarded backup
+  and launched with the prior workspace session intact.
+- A local `vellograph://diff` URL opened the expected one-change comparison.
+  With the earlier build, SwiftUI created another workspace window; the open
+  workspace now declares that it accepts external URLs. After installing the
+  signed Release build, the same URL opened a tab in the existing window and
+  left one app process and one IPC listener. The disposable comparison tab was
+  closed afterward.
 
 ## Next verification and implementation
 

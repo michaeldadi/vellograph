@@ -17,6 +17,7 @@ struct VellographApp: App {
         WindowGroup("Vellograph", id: "workspace") {
             WorkspaceView(workspace: workspace)
                 .frame(minWidth: 900, minHeight: 580)
+                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
                 .onOpenURL { url in
                     Task { await workspace.open(urls: [url]) }
                 }
