@@ -590,7 +590,8 @@ local use, hosted CI, and release qualification.
   source bytes, retained the old destination bytes in recovery, and then
   showed zero differences. The disposable tab and fixture were removed. The
   native folder copy/clone test now checks source preservation and executable
-  mode; its focused local run passed 1/1. Hosted verification is pending.
+  mode; its focused local run passed 1/1, and hosted run `42520807501` passed
+  both jobs at `2255ac6`.
 - The 64 MiB reviewed folder replacement probe found autoreleased read buffers
   accumulating during fingerprints and equality checks. Wrapping each read
   chunk in an autorelease pool reduced three-run peak process memory from
@@ -599,6 +600,11 @@ local use, hosted CI, and release qualification.
   recovery bytes and now runs in weekly/manual macOS CI. These are core-process
   results; installed-app peak memory and cancellation during `fcopyfile`
   remain open.
+- The exact-byte binary comparison now drains autoreleased read buffers on
+  each 64 KiB block. Three release-probe runs compared two 64 MiB files in
+  0.034–0.037 seconds and peaked at about 10 MiB process memory. The Word
+  conversion pipe uses the same bounded-read pattern. Weekly/manual CI now
+  records the binary probe; installed-app memory remains unmeasured.
 
 ## Next verification and implementation
 

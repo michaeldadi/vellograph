@@ -23,10 +23,14 @@ public enum ByteComparison {
         var identical = true
         while true {
             try Task<Never, Never>.checkCancellation()
-            let a = try readBlock(leftHandle)
-            let b = try readBlock(rightHandle)
-            if a != b { identical = false; break }
-            if a.isEmpty { break }
+            let outcome = try autoreleasepool { () throws -> Bool? in
+                let a = try readBlock(leftHandle)
+                let b = try readBlock(rightHandle)
+                if a != b { return false }
+                if a.isEmpty { return true }
+                return nil
+            }
+            if let outcome { identical = outcome; break }
         }
         guard leftBefore == (try Stamp(left)), rightBefore == (try Stamp(right)) else {
             throw ByteComparisonError.changedDuringRead

@@ -84,15 +84,16 @@ public enum DocumentTextLoader {
 
         var data = Data()
         do {
-            while let chunk = try output.fileHandleForReading.read(upToCount: 65_536), !chunk.isEmpty {
+            while try autoreleasepool(invoking: { () throws -> Bool in
+                guard let chunk = try output.fileHandleForReading.read(upToCount: 65_536),
+                      !chunk.isEmpty else { return false }
                 data.append(chunk)
-                if data.count > 100_000_000 {
-                    process.terminate()
-                    process.waitUntilExit()
-                    throw DocumentTextError.outputTooLarge
-                }
-            }
+                if data.count > 100_000_000 { throw DocumentTextError.outputTooLarge }
+                return true
+            }) {}
         } catch let error as DocumentTextError {
+            process.terminate()
+            process.waitUntilExit()
             throw error
         } catch {
             process.terminate()

@@ -1,5 +1,6 @@
 import DiffCore
 import Darwin
+import DocumentCore
 import FolderCore
 import Foundation
 import GitCore
@@ -122,6 +123,32 @@ private func folderCopyProbe() throws {
                  applyPeak, peakResidentMiB()))
 }
 
+private func byteComparisonProbe() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("vellograph-bytes-bench-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let left = root.appendingPathComponent("left.bin")
+    let right = root.appendingPathComponent("right.bin")
+    for url in [left, right] {
+        guard FileManager.default.createFile(atPath: url.path, contents: nil) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+        let writer = try FileHandle(forWritingTo: url)
+        let block = Data(repeating: 0x7B, count: 1_048_576)
+        for _ in 0..<64 { try writer.write(contentsOf: block) }
+        try writer.close()
+    }
+    let clock = ContinuousClock()
+    let start = clock.now
+    guard try ByteComparison.areIdentical(left, right) else {
+        fatalError("The byte comparison misclassified identical files.")
+    }
+    let elapsed = start.duration(to: clock.now)
+    print(String(format: "64 MiB exact byte comparison | %.3f s | peak %.0f MiB",
+                 seconds(elapsed), peakResidentMiB()))
+}
+
 private func imageProbe(left: URL, right: URL) throws {
     let clock = ContinuousClock()
     let start = clock.now
@@ -232,10 +259,12 @@ do {
         try folderProbe()
     } else if arguments == ["--folder-copy"] {
         try folderCopyProbe()
+    } else if arguments == ["--byte-compare"] {
+        try byteComparisonProbe()
     } else if arguments == ["--git-busy"] {
         try gitProbe()
     } else if !arguments.isEmpty {
-        fputs("Usage: vellograph-bench [--folder100k | --folder-copy | --git-busy | --image LEFT RIGHT]\n", stderr)
+        fputs("Usage: vellograph-bench [--folder100k | --folder-copy | --byte-compare | --git-busy | --image LEFT RIGHT]\n", stderr)
         exit(2)
     } else {
         for size in [1, 10] { try textProbe(mebibytes: size) }

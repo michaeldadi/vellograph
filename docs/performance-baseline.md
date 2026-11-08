@@ -12,6 +12,7 @@ swift build -c release --product vellograph-bench
 /usr/bin/time -l .build/release/vellograph-bench
 /usr/bin/time -l .build/release/vellograph-bench --folder100k
 /usr/bin/time -l .build/release/vellograph-bench --folder-copy
+/usr/bin/time -l .build/release/vellograph-bench --byte-compare
 /usr/bin/time -l .build/release/vellograph-bench --git-busy
 mkdir -p .build/ui-fixtures
 sips -z 4096 4096 Artwork/VellographIcon-master.png \
@@ -38,6 +39,7 @@ sips -s format jpeg Tests/fixtures/huge-solid.png \
 | 163,840-line, 9.27 MiB text pair; one changed line | Parse 0.241 s; diff 0.345 s; display rows 0.002 s | Same process as above |
 | One 100,000-entry folder against an empty folder | Compare 0.513–0.632 s on two later runs | 136–143 MB including fixture creation and cleanup |
 | Reviewed replacement of a 64 MiB file, three runs | Plan 0.037–0.052 s; apply 0.145–0.191 s | 19–20 MiB including fixture creation and exact readback |
+| Exact byte comparison of two identical 64 MiB files, three runs | 0.034–0.037 s | About 10 MiB including fixture creation |
 | Git worktree with 5,000 tracked files and 1,125 changed paths | Repository open 0.346 s; repeated status 0.112 / 0.108 / 0.117 s | 14.5 MB including fixture creation and cleanup |
 | 4096 × 4096 PNG pair; 12,621,444 changed pixels | Decode and pixel difference 0.421 s | 287 MB for the process |
 | 5000 × 5000 PNG pair; 18,805,938 changed pixels | Decode and pixel difference 0.861 s | 420 MB for the process |
@@ -61,6 +63,13 @@ after fixture creation to 15–16 MiB after planning, 17 MiB after applying,
 and 19 MiB after verification. These measurements include process memory,
 not the installed app's memory. The weekly CI probe records the same workload
 without enforcing a threshold yet.
+
+The byte probe uses two independently written 64 MiB files. Its comparison
+drains autoreleased read buffers after each 64 KiB block, then verifies the
+files' stamps have not changed. Word conversion similarly drains its 64 KiB
+pipe reads, while retaining the intentional 100 MB output limit. The byte
+probe also runs in weekly/manual CI; neither probe measures installed-app
+memory.
 
 The Git fixture includes staged, unstaged, partially staged, deleted, and
 untracked paths. Its 3.42-second process lifetime includes creating a fresh
