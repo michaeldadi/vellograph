@@ -23,6 +23,40 @@ import XCTest
         XCTAssertTrue(openButton.waitForExistence(timeout: 5))
     }
 
+    func testNewSelectionScrollsTabIntoView() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("vellograph-tab-scroll-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        var savedTabs: [[String]] = []
+        for index in 0..<12 {
+            let left = folder.appendingPathComponent("left-\(index).txt")
+            let right = folder.appendingPathComponent("right-\(index).txt")
+            try Data("old\n".utf8).write(to: left)
+            try Data("new\n".utf8).write(to: right)
+            savedTabs.append([left.path, right.path])
+        }
+        let pairs = try JSONEncoder().encode(savedTabs)
+
+        let app = XCUIApplication()
+        app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
+        app.launchEnvironment["VELLOGRAPH_UI_TEST_TAB_PAIRS"] = String(decoding: pairs, as: UTF8.self)
+        app.launch()
+
+        let tabs = app.scrollViews["Comparison tabs"]
+        let selectedClose = app.buttons.matching(NSPredicate(
+            format: "label CONTAINS %@", "left-11.txt"
+        )).firstMatch
+        XCTAssertTrue(selectedClose.waitForExistence(timeout: 20))
+        XCTAssertTrue(tabs.exists)
+        let visible = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"),
+                                                object: selectedClose)
+        XCTAssertEqual(XCTWaiter.wait(for: [visible], timeout: 5), .completed,
+                       "Newest selected tab should become visible")
+        XCTAssertGreaterThanOrEqual(selectedClose.frame.minX, tabs.frame.minX)
+        XCTAssertLessThanOrEqual(selectedClose.frame.maxX, tabs.frame.maxX)
+    }
+
     func testRecentComparisonRestoresAndMissingSourceReportsError() throws {
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")

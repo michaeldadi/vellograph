@@ -554,6 +554,17 @@ local use, hosted CI, and release qualification.
   operation intervals, not first-frame or scrolling measurements; see
   `performance-baseline.md`. The full Swift package suite and signed Release
   build passed locally after the instrumentation change.
+- The installed app also opened a changed 8192² PNG pair. Difference mode
+  rendered its mask and explicitly labeled 12,614,169 of 16,777,216 pixels as
+  sampled preview differences. The Xcode Logging trace recorded 225.17 ms to
+  open the comparison, 21.11 ms to prepare the image view, and 1.14 seconds to
+  calculate the sampled difference. The disposable tab was closed. First-frame,
+  scrolling, and peak app-memory measurements remain open.
+- Opening many comparisons could leave the newly selected tab outside the
+  visible tab strip. Selection now scrolls to its tab after SwiftUI has laid
+  out the strip. A signed native UI test opens twelve disposable comparison
+  pairs and verifies the last tab becomes visible and hittable; it passed
+  locally on macOS 27.2. The test inputs are removed afterward.
 
 ## Next verification and implementation
 

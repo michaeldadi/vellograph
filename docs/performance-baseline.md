@@ -75,13 +75,16 @@ The signed Release app installed at `~/Applications/Vellograph.app` was traced
 with Xcode 27.2's **Logging** template on the same Mac on November 8, 2026.
 `OSSignposter` intervals use the `io.github.michaeldadi.vellograph` subsystem.
 The text pair was generated as 163,840 lines and 8.9 MiB per file, with one
-changed line. The image pair was 4096 × 4096 PNGs derived from the app icon.
+changed line. Both image pairs were PNGs derived from the app icon.
 
 | Installed-app operation | Single observed signpost interval |
 | --- | ---: |
 | `OpenComparison` for the text pair sent through the bundled CLI | 692.69 ms |
 | `PrepareImages` after selecting the image tab | 13.73 ms |
 | `CalculateDifference` after selecting Difference mode | 439.71 ms |
+| `OpenComparison` for a changed 8192 × 8192 image pair | 225.17 ms |
+| `PrepareImages` for that large image pair | 21.11 ms |
+| `CalculateDifference` for its 4096² sampled preview | 1.14 s |
 
 The app accessibility tree showed the text comparison with one change and the
 image difference with 12,621,444 changed pixels out of 16,777,216. The first
@@ -91,6 +94,9 @@ ready, so only the second text trace is used above. These intervals cover the
 named operations in the code, not CLI startup, socket handoff, first rendered
 frame, scrolling, or peak app memory. `PrepareImages` may defer image decoding
 until drawing; the difference interval includes the explicit pixel calculation.
+The large-image view visibly labeled its result “Preview: 12,614,169 of
+16,777,216 sampled pixels differ” and rendered the difference mask. The
+large-image numbers also come from one trace, not a repeatable distribution.
 
 To reproduce: attach `xcrun xctrace record --template Logging --attach <app-pid>
 --time-limit 22s --output <path>.trace`, wait for recording to start, invoke the

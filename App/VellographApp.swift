@@ -35,6 +35,12 @@ struct VellographApp: App {
                             } else {
                                 await workspace.open(urls: urls)
                             }
+                        } else if let pairs = environment["VELLOGRAPH_UI_TEST_TAB_PAIRS"],
+                                  let data = pairs.data(using: .utf8),
+                                  let values = try? JSONDecoder().decode([[String]].self, from: data) {
+                            for paths in values {
+                                await workspace.open(urls: paths.map { URL(fileURLWithPath: $0) })
+                            }
                         }
                         return
                     }
