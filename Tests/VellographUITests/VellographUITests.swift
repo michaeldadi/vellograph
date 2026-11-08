@@ -400,6 +400,10 @@ import XCTest
         let hidden = right.appendingPathComponent(".keep-hidden")
         try Data("new\n".utf8).write(to: source)
         try Data("old\n".utf8).write(to: destination)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755],
+                                              ofItemAtPath: source.path)
+        try FileManager.default.setAttributes([.posixPermissions: 0o644],
+                                              ofItemAtPath: destination.path)
         try Data("original\n".utf8).write(to: destinationOnly)
         try Data("hidden\n".utf8).write(to: hidden)
 
@@ -425,6 +429,10 @@ import XCTest
         app.buttons["Apply Reviewed Changes"].click()
         XCTAssertTrue(app.staticTexts["1 difference"].waitForExistence(timeout: 10))
         XCTAssertEqual(try String(contentsOf: destination, encoding: .utf8), "new\n")
+        XCTAssertEqual(try String(contentsOf: source, encoding: .utf8), "new\n")
+        let copiedMode = try FileManager.default.attributesOfItem(
+            atPath: destination.path)[.posixPermissions] as? NSNumber
+        XCTAssertEqual(copiedMode?.intValue, 0o755)
         XCTAssertEqual(try String(contentsOf: destinationOnly, encoding: .utf8), "original\n")
 
         app.buttons["Preview Clone"].click()

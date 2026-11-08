@@ -580,10 +580,17 @@ local use, hosted CI, and release qualification.
   `42519139925` passed both jobs at `23c10ae`. Source identity capture is
   limited to planned mutations, avoiding extra metadata calls for equal items
   in large folders. Cancellation before a staged copy leaves the destination
-  untouched, and a forced interruption
-  after one replacement restores both destination files. Cancellation during
-  the underlying `fcopyfile` call remains unmeasured; hosted validation of the
-  cancellation and equal-item optimization remains pending.
+  untouched, and a forced interruption after one replacement restores both
+  destination files. Cancellation during
+  the underlying `fcopyfile` call remains unmeasured. Hosted runs
+  `42519502311` at `4bacdd6` and `42519793803` at `0a02530` passed both jobs,
+  including all 14 native UI cases. The signed Release app was installed with
+  a guarded backup and restored its saved tabs. In its folder UI, a reviewed
+  copy replaced one disposable shell script, preserved executable mode and
+  source bytes, retained the old destination bytes in recovery, and then
+  showed zero differences. The disposable tab and fixture were removed. The
+  native folder copy/clone test now checks source preservation and executable
+  mode; its focused local run passed 1/1. Hosted verification is pending.
 
 ## Next verification and implementation
 
