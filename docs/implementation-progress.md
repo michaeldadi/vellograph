@@ -446,7 +446,7 @@ local use, hosted CI, and release qualification.
   with a changed title. The app now opts into signed-feed validation and
   verification of update archives before extraction. A signed Release build
   passed bundle, code-signature, and both Info.plist flag checks. In-app
-  tamper/offline behavior and public signing remain open. A public-key verifier
+  final-package tamper/offline checks and public signing remain open. A public-key verifier
   now checks the appcast signature and both built-app settings in CI; it passed
   locally against the signed feed and rejected a changed copy. The verified
   signed Release app was installed in `~/Applications` after a guarded backup
@@ -458,6 +458,28 @@ local use, hosted CI, and release qualification.
   left one app process and one IPC listener. The disposable comparison tab was
   closed afterward. A link to a missing absolute file showed the native
   "Unable to Open" alert without adding a comparison tab.
+- An isolated, re-signed copy of the installed Release app used a separate
+  bundle ID and loopback feed. With no server, the in-app check reported a
+  retrieval error. It rejected a feed with a changed signed byte, then offered
+  an update from a correctly signed local feed and rejected its archive after
+  one byte was changed. The copy stayed at bundle version 4 with a valid code
+  signature; the local server was stopped and the installed app resumed its
+  previous tabs. See `update-proof.md`. The final distribution package still
+  needs these checks and Developer ID signing.
+- Two-way text resolution now offers Command–1 through 4 choices for the next
+  unresolved change, Command–Z choice undo, Command–Shift–Return to build, and
+  Command–S to save. Save As starts beside the source. The first run of the
+  thirteenth hosted UI case reached Save but queried a path macOS truncated in
+  its accessibility value. The confirmation now shows the filename and keeps
+  the full path in its tooltip. The corrected hosted run `42486536194` passed
+  all 13 cases, including keyboard choices across two changes, undo, exact
+  saved output, and unchanged inputs. Package tests and a signed local Xcode
+  test build also passed. The installed Release app predates this change.
+- A release-mode Git probe now creates a disposable 5,000-file repository with
+  1,125 changed paths. Repository open took 0.346 seconds and three status
+  calls took 0.112, 0.108, and 0.117 seconds on this Mac; the process peaked
+  at 14.5 MB resident memory including fixture creation. The weekly CI job
+  now records the same probe. App-level Git interaction timing remains open.
 
 ## Next verification and implementation
 
@@ -466,8 +488,8 @@ local use, hosted CI, and release qualification.
    performance checks, and remaining CLI failure workflows.
 2. Complete the remaining text, image, folder, Git, workspace, and integration
    outcomes in the capability checklist; test keyboard and failure paths.
-3. Run the update tamper/offline/rollback checks, performance and uninterrupted
-   UI gates, release packaging, and Homebrew cask validation.
+3. Repeat the update failure and rollback checks on final packaging, finish
+   performance and uninterrupted UI gates, then validate the Homebrew cask.
 
 Run `swift test` and the Xcode app build after code changes. Keep status as
 implemented, locally exercised, or release-qualified rather than treating

@@ -24,7 +24,7 @@ let package = Package(
         .target(name: "ImageCore"),
         .target(name: "IPCBridge"),
         .executableTarget(name: "VellographCLI", dependencies: ["IPCBridge", "GitCore"]),
-        .executableTarget(name: "VellographBench", dependencies: ["DiffCore", "FolderCore", "ImageCore"]),
+        .executableTarget(name: "VellographBench", dependencies: ["DiffCore", "FolderCore", "GitCore", "ImageCore"]),
         .testTarget(name: "DiffCoreTests", dependencies: ["DiffCore"]),
         .testTarget(name: "SyntaxCoreTests", dependencies: ["SyntaxCore"]),
         .testTarget(name: "GitCoreTests", dependencies: ["GitCore"]),

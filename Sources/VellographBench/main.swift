@@ -1,6 +1,7 @@
 import DiffCore
 import FolderCore
 import Foundation
+import GitCore
 import ImageCore
 
 /// Deterministic core timing probe. This does not measure disk I/O or the first
@@ -83,6 +84,95 @@ private func imageProbe(left: URL, right: URL) throws {
                  result.width, result.height, seconds(elapsed), result.changedPixelCount))
 }
 
+private func gitProbe() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("vellograph-git-bench-\(UUID().uuidString)", isDirectory: true)
+    let files = root.appendingPathComponent("tracked", isDirectory: true)
+    let fm = FileManager.default
+    try fm.createDirectory(at: files, withIntermediateDirectories: true)
+    defer { try? fm.removeItem(at: root) }
+
+    // Keep the fixture independent of the developer's Git identity and hooks.
+    setenv("GIT_CONFIG_NOSYSTEM", "1", 1)
+    setenv("GIT_CONFIG_GLOBAL", "/dev/null", 1)
+    func git(_ arguments: [String]) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = ["-C", root.path] + arguments
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = output
+        try process.run()
+        let message = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else {
+            throw NSError(domain: "VellographBench.Git", code: Int(process.terminationStatus),
+                          userInfo: [NSLocalizedDescriptionKey:
+                            String(decoding: message.prefix(1_000), as: UTF8.self)])
+        }
+    }
+
+    try git(["init", "-q"])
+    try git(["config", "user.name", "Vellograph Benchmark"])
+    try git(["config", "user.email", "benchmark@localhost"])
+    for directory in 0..<50 {
+        let folder = files.appendingPathComponent(String(format: "d%02d", directory), isDirectory: true)
+        try fm.createDirectory(at: folder, withIntermediateDirectories: false)
+        for file in 0..<100 {
+            let path = folder.appendingPathComponent(String(format: "f%03d.txt", file))
+            guard fm.createFile(atPath: path.path, contents: Data("original\n".utf8)) else {
+                throw CocoaError(.fileWriteUnknown)
+            }
+        }
+    }
+    try git(["add", "--", "tracked"])
+    try git(["commit", "-q", "-m", "Benchmark baseline"])
+
+    for index in 0..<1_000 {
+        let folder = index / 100
+        let file = index % 100
+        let relative = String(format: "tracked/d%02d/f%03d.txt", folder, file)
+        try Data("changed \(index)\n".utf8).write(to: root.appendingPathComponent(relative))
+    }
+    try git(["add", "--", "tracked/d00", "tracked/d01", "tracked/d02"])
+    // d02 has 100 staged files; the benchmark includes partially staged
+    // changes by editing a subset again after staging.
+    for index in 0..<50 {
+        let path = root.appendingPathComponent(String(format: "tracked/d02/f%03d.txt", index))
+        try Data("staged and changed again \(index)\n".utf8).write(to: path)
+    }
+    for index in 0..<25 {
+        let path = root.appendingPathComponent(String(format: "tracked/d20/f%03d.txt", index))
+        try fm.removeItem(at: path)
+    }
+    for index in 0..<100 {
+        let path = root.appendingPathComponent(String(format: "untracked-%03d.txt", index))
+        guard fm.createFile(atPath: path.path, contents: Data("untracked\n".utf8)) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+    }
+
+    let client = GitClient()
+    let clock = ContinuousClock()
+    let openStart = clock.now
+    let repository = try client.repository(at: root)
+    let openTime = openStart.duration(to: clock.now)
+    guard repository.status.count == 1_125 else {
+        fatalError("Expected 1,125 busy worktree entries, got \(repository.status.count).")
+    }
+    var statusTimes: [Double] = []
+    for _ in 0..<3 {
+        let start = clock.now
+        let entries = try client.status(in: root)
+        statusTimes.append(seconds(start.duration(to: clock.now)))
+        guard entries.count == repository.status.count else {
+            fatalError("Git status changed during the benchmark.")
+        }
+    }
+    print(String(format: "5,000 tracked files | 1,125 changed paths | repository open %.3f s | status %.3f / %.3f / %.3f s",
+                 seconds(openTime), statusTimes[0], statusTimes[1], statusTimes[2]))
+}
+
 do {
     let arguments = Array(CommandLine.arguments.dropFirst())
     if arguments.count == 3, arguments[0] == "--image" {
@@ -90,8 +180,10 @@ do {
                        right: URL(fileURLWithPath: arguments[2]))
     } else if arguments == ["--folder100k"] {
         try folderProbe()
+    } else if arguments == ["--git-busy"] {
+        try gitProbe()
     } else if !arguments.isEmpty {
-        fputs("Usage: vellograph-bench [--folder100k | --image LEFT RIGHT]\n", stderr)
+        fputs("Usage: vellograph-bench [--folder100k | --git-busy | --image LEFT RIGHT]\n", stderr)
         exit(2)
     } else {
         for size in [1, 10] { try textProbe(mebibytes: size) }

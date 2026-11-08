@@ -29,12 +29,27 @@ This is a local development proof, not a public release qualification.
   before extraction; the built bundle passed signature and Info.plist checks.
   The CI verifier checks the feed against the app's embedded public key without
   needing the private signing key and rejected the changed copy locally.
-  Its behavior against a tampered or offline feed still needs an in-app check.
+- On November 8, a separately signed copy of the installed 0.2.1 Release app
+  used a distinct bundle ID and a feed bound only to `127.0.0.1`; the installed
+  app bundle and system network settings were unchanged. With no server listening,
+  **Check for Updates** showed Sparkle's retrieval error and returned to the
+  usable workspace. A locally served copy of the published feed with one
+  changed title byte showed an improperly signed **feed** error.
+- For the archive failure check, a local feed with a higher version and an
+  enclosure signed by the Vellograph Keychain key was itself signed. The
+  archive was then changed by one byte without changing its length. Sparkle
+  offered the update, downloaded it from the loopback server, and showed an
+  improperly signed **update** error after **Install Update**. The test app
+  remained at bundle version 4 and passed deep code-signature verification.
+  The loopback server was stopped, and the original installed app relaunched
+  with its previous tabs. This proves the failure paths in an isolated copy
+  of the current Release binary; the final public package still needs the
+  same checks.
 
 ## Still required before release
 
-- In-app rejection and user-facing recovery for a tampered download.
-- Offline feed and download behavior without changing this Mac's global network settings.
+- Repeat the offline and tampered-download checks against the final public
+  package; the current checks used a separately signed local copy.
 - Developer ID signing and notarization for public distribution, if the Apple Developer account becomes available in Xcode. The proof archive uses an Apple Development identity; that identity is unsuitable as a general public distribution identity.
 - Repeat rollback, offline, and tamper UI tests for Vellograph, then test the
   final packaging and Homebrew cask.
