@@ -104,9 +104,9 @@ struct TextResolutionView: View {
                     .overlay(RoundedRectangle(cornerRadius: 5).stroke(.quaternary))
             }
             if let savedURL {
-                Text("Saved \(savedURL.path)")
+                Text("Saved \(savedURL.lastPathComponent)")
                     .font(.caption)
-                    .textSelection(.enabled)
+                    .help(savedURL.path)
             }
             if let recoveryURL {
                 Text("Previous contents are recoverable at \(recoveryURL.path)")

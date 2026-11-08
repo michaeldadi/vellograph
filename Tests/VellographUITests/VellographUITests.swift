@@ -443,9 +443,7 @@ import XCTest
         XCTAssertTrue(saveDialog.waitForExistence(timeout: 5))
         saveDialog.buttons["Save"].click()
         let saved = folder.appendingPathComponent("b.txt.resolved")
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(
-            format: "label CONTAINS %@", saved.path
-        )).firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Saved b.txt.resolved"].waitForExistence(timeout: 10))
         XCTAssertEqual(try String(contentsOf: saved, encoding: .utf8),
                        "first B\nshared one\nshared two\nsecond A\n")
         XCTAssertEqual(try String(contentsOf: left, encoding: .utf8), leftText)
