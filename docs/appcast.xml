@@ -1,0 +1,16 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Mac Diff Studio</title>
+        <item>
+            <title>0.1.1</title>
+            <pubDate>Sat, 07 Nov 2026 20:51:51 -0500</pubDate>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>0.1.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>27.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="plain-text"><![CDATA[Update proof: signed 0.1.1 archive for testing in-app delivery on macOS 27.2. The application is an early development build.
+]]></description>
+            <enclosure url="https://github.com/michaeldadi/mac-diff-studio/releases/download/v0.1.1-update-proof/MacDiffStudio-0.1.1.zip" length="1246503" type="application/octet-stream" sparkle:edSignature="HHb+BGwRAOTjuQQVObrvJV3y4n4djLvQXP0OKt6SmiV0HCJWKAZr7LFD1IQcE5GG4p2rQrEcdF9w+vjYQC4lCg=="/>
+        </item>
+    </channel>
+</rss>

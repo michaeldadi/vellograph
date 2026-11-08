@@ -27,8 +27,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Mac Diff Studio
-        CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
+        CFBundleShortVersionString: "0.1.1"
+        CFBundleVersion: "2"
         LSApplicationCategoryType: public.app-category.developer-tools
         SUFeedURL: https://michaeldadi.github.io/mac-diff-studio/appcast.xml
         SUPublicEDKey: VSfGne1/1drahXuPUd0BdomB2P/sUNppRjTtKihb0+8=
