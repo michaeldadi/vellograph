@@ -364,9 +364,14 @@ local use, hosted CI, and release qualification.
   its Go to Folder action. The downstream UI tests now receive explicit,
   disposable fixture paths through a test-only launch environment; the
   separate welcome test still opens and cancels the native file picker.
-  Swift package tests and the signed Xcode build pass. Local UI automation
-  remains unauthorized after the macOS Automation Mode interruption, and
-  the revised hosted UI gate has not yet passed.
+  Swift package tests and the signed Xcode build pass. The revised hosted
+  macOS 27 run `42476617751` passed both `build-and-test` and `native-ui` at
+  commit `4da6bd3`. Local UI automation remains unauthorized after the macOS
+  Automation Mode interruption.
+- A signed Release-configuration app build passed bundle checks for the GUI,
+  CLI, Action extension, and Share extension, plus deep code-signature
+  verification. It uses an Apple Development identity. No valid Developer ID
+  Application identity is installed, so this is not a notarized public build.
 
 ## Next verification and implementation
 

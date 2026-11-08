@@ -52,6 +52,20 @@ jobs:
           scripts/verify-cli-failures.sh \
             "$RUNNER_TEMP/VellographDerivedData/Build/Products/Debug/Vellograph.app"
 
+      - name: Build and inspect Release app
+        run: |
+          xcodebuild -quiet \
+            -project Vellograph.xcodeproj \
+            -scheme Vellograph \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/VellographDerivedData" \
+            -jobs 3 \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+          scripts/verify-app-bundle.sh \
+            "$RUNNER_TEMP/VellographDerivedData/Build/Products/Release/Vellograph.app"
+
       - name: Record weekly core performance
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
