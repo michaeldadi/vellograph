@@ -254,9 +254,6 @@ public struct FolderOperationPlan: Sendable {
             try afterSourcePreflight?(action)
             try validateSourceIdentity(action, using: sourceHandle)
             let (sourceParent, sourceName) = try Self.sourceParent(in: sourceHandle, for: action.path)
-            guard try sourceParent.fingerprint(sourceName) == action.sourceFingerprint else {
-                throw FolderOperationError.stalePreview(action.path)
-            }
             let (stageParent, stageName) = try stageHandle.parent(for: action.path, creating: true)
             try sourceParent.copy(sourceName, to: stageParent, as: stageName,
                                   kind: action.itemKind, expectedIdentity: action.sourceIdentity)

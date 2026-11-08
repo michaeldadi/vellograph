@@ -187,6 +187,53 @@ import Testing
         atPath: destination.appendingPathComponent("sub/item.txt").path))
 }
 
+@Test func cancellationDuringStagingLeavesDestinationUntouched() async throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    try Data(repeating: 0x41, count: 1_048_576)
+        .write(to: source.appendingPathComponent("large.bin"))
+    try Data("old".utf8).write(to: destination.appendingPathComponent("large.bin"))
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["large.bin"])
+    let result = await Task { () -> Error? in
+        do {
+            _ = try plan.apply(afterFinalTargetCheck: nil, afterSourcePreflight: { _ in
+                withUnsafeCurrentTask { $0?.cancel() }
+            })
+            return nil
+        } catch { return error }
+    }.value
+    #expect(result is CancellationError)
+    #expect(try String(contentsOf: destination.appendingPathComponent("large.bin"),
+                       encoding: .utf8) == "old")
+    let leftovers = try FileManager.default.contentsOfDirectory(atPath: root.path)
+        .filter { $0.hasPrefix(".vellograph-stage-") }
+    #expect(leftovers.isEmpty)
+}
+
+@Test func cancellationAfterFirstReplacementRestoresBothFiles() throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    for name in ["a.txt", "b.txt"] {
+        try Data("new-\(name)".utf8).write(to: source.appendingPathComponent(name))
+        try Data("old-\(name)".utf8).write(to: destination.appendingPathComponent(name))
+    }
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["a.txt", "b.txt"])
+    #expect(throws: CancellationError.self) {
+        try plan.apply(afterFinalTargetCheck: nil, afterDestinationOpen: { action in
+            if action.path == "b.txt" { throw CancellationError() }
+        })
+    }
+    for name in ["a.txt", "b.txt"] {
+        #expect(try String(contentsOf: destination.appendingPathComponent(name),
+                           encoding: .utf8) == "old-\(name)")
+    }
+    let leftovers = try FileManager.default.contentsOfDirectory(atPath: root.path)
+        .filter { $0.hasPrefix(".vellograph-recovery-") }
+    #expect(leftovers.isEmpty)
+}
+
 @Test func pinnedDestinationParentNeverWritesThroughAReplacementLink() throws {
     let (root, source, destination) = try folders()
     defer { try? FileManager.default.removeItem(at: root) }
