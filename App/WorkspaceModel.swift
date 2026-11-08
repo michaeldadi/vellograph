@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
 
 enum ComparisonContent: Sendable {
     case text(TextComparison)
+    case merge(TextMergeComparison)
     case folders([FolderDifference])
     case images(URL, URL)
     case repository(GitRepository)
@@ -18,20 +19,71 @@ struct TextComparison: Sendable {
     let left: TextSnapshot
     let right: TextSnapshot
     let diff: DiffResult
+    let rows: [DiffDisplayRow]
+    let changeRowIDs: [Int]
+    let changeOperationIDs: [Int]
+
+    init(sources: [URL], left: TextSnapshot, right: TextSnapshot, diff: DiffResult) {
+        self.sources = sources
+        self.left = left
+        self.right = right
+        self.diff = diff
+        let rows = DiffDisplay.rows(for: diff.operations)
+        self.rows = rows
+        var lastChanged = false
+        self.changeRowIDs = rows.compactMap { row in
+            defer { lastChanged = row.isChanged }
+            return row.isChanged && !lastChanged ? row.id : nil
+        }
+        var lastOperationChanged = false
+        self.changeOperationIDs = diff.operations.enumerated().compactMap { index, operation in
+            let changed: Bool
+            if case .equal = operation { changed = false } else { changed = true }
+            defer { lastOperationChanged = changed }
+            return changed && !lastOperationChanged ? index : nil
+        }
+    }
+}
+
+struct TextMergeComparison: Sendable {
+    let sources: [URL]
+    let snapshots: [TextSnapshot]
 }
 
 struct ComparisonTab: Identifiable {
     let id: UUID
     let title: String
+    let sources: [URL]
     var content: ComparisonContent
+}
+
+struct RecentComparison: Identifiable, Codable {
+    let id: UUID
+    let paths: [String]
+    let title: String
+    let openedAt: Date
+}
+
+private struct SavedWorkspace: Codable {
+    let tabs: [[String]]
+    let selectedIndex: Int
 }
 
 @MainActor @Observable
 final class WorkspaceModel {
     var tabs: [ComparisonTab] = []
     var selection: UUID?
+    var recentComparisons: [RecentComparison] = []
     var isLoading = false
     var errorMessage: String?
+    private var didRestore = false
+
+    init() {
+        if let data = UserDefaults.standard.data(forKey: "recentComparisons.v1"),
+           let recent = try? JSONDecoder().decode([RecentComparison].self, from: data) {
+            recentComparisons = recent
+        }
+    }
 
     var selectedTab: ComparisonTab? { tabs.first { $0.id == selection } }
 
@@ -54,7 +106,7 @@ final class WorkspaceModel {
             let left = try TextSnapshot(text: "")
             let right = try TextSnapshot(text: value)
             let diff = try DiffEngine.compare(left.lines, right.lines)
-            add(title: "Clipboard", content: .text(TextComparison(sources: [], left: left, right: right, diff: diff)))
+            add(title: "Clipboard", sources: [], content: .text(TextComparison(sources: [], left: left, right: right, diff: diff)))
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -62,7 +114,7 @@ final class WorkspaceModel {
 
     func open(urls: [URL]) async {
         guard !urls.isEmpty else { return }
-        if urls.count == 1, urls[0].scheme == "macdiffstudio" {
+        if urls.count == 1, urls[0].scheme == "vellograph" {
             await openDeepLink(urls[0])
             return
         }
@@ -73,9 +125,22 @@ final class WorkspaceModel {
             errorMessage = "No local files were provided."
             return
         }
+        guard candidates.count <= 3, candidates.count == urls.count else {
+            errorMessage = "Open one or two sources to compare, or three text files in base, local, remote order to merge."
+            return
+        }
         do {
             let content = try await Task.detached(priority: .userInitiated) { () -> ComparisonContent in
                 let first = candidates[0]
+                if candidates.count == 3 {
+                    let snapshots = try candidates.map {
+                        try TextSnapshot(data: Data(contentsOf: $0, options: .mappedIfSafe))
+                    }
+                    return .merge(TextMergeComparison(
+                        sources: candidates,
+                        snapshots: snapshots
+                    ))
+                }
                 if candidates.count == 1 {
                     if let repository = try? GitClient().repository(at: first) {
                         return .repository(repository)
@@ -102,8 +167,9 @@ final class WorkspaceModel {
                 let diff = try DiffEngine.compare(left.lines, right.lines)
                 return .text(TextComparison(sources: candidates, left: left, right: right, diff: diff))
             }.value
-            let title = candidates.prefix(2).map(\.lastPathComponent).joined(separator: " ↔ ")
-            add(title: title, content: content)
+            let title = candidates.map(\.lastPathComponent).joined(separator: candidates.count == 3 ? " · " : " ↔ ")
+            add(title: title, sources: candidates, content: content)
+            remember(candidates, title: title)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -112,18 +178,65 @@ final class WorkspaceModel {
     func close(_ id: UUID) {
         tabs.removeAll { $0.id == id }
         if selection == id { selection = tabs.last?.id }
+        saveSession()
     }
 
-    private func add(title: String, content: ComparisonContent) {
-        let tab = ComparisonTab(id: UUID(), title: title, content: content)
+    func select(_ id: UUID) {
+        selection = id
+        saveSession()
+    }
+
+    func reopen(_ recent: RecentComparison) {
+        Task { await open(urls: recent.paths.map { URL(fileURLWithPath: $0) }) }
+    }
+
+    func restoreSession() async {
+        guard !didRestore else { return }
+        didRestore = true
+        guard let data = UserDefaults.standard.data(forKey: "savedWorkspace.v1"),
+              let saved = try? JSONDecoder().decode(SavedWorkspace.self, from: data) else { return }
+        for paths in saved.tabs where !paths.isEmpty && paths.allSatisfy({ FileManager.default.fileExists(atPath: $0) }) {
+            await open(urls: paths.map { URL(fileURLWithPath: $0) })
+        }
+        if tabs.indices.contains(saved.selectedIndex) {
+            selection = tabs[saved.selectedIndex].id
+        }
+        saveSession()
+    }
+
+    private func add(title: String, sources: [URL], content: ComparisonContent) {
+        let tab = ComparisonTab(id: UUID(), title: title, sources: sources, content: content)
         tabs.append(tab)
         selection = tab.id
+        saveSession()
+    }
+
+    private func remember(_ urls: [URL], title: String) {
+        let paths = urls.map { $0.standardizedFileURL.path }
+        recentComparisons.removeAll { $0.paths == paths }
+        recentComparisons.insert(RecentComparison(id: UUID(), paths: paths, title: title, openedAt: .now), at: 0)
+        if recentComparisons.count > 20 { recentComparisons.removeLast(recentComparisons.count - 20) }
+        if let data = try? JSONEncoder().encode(recentComparisons) {
+            UserDefaults.standard.set(data, forKey: "recentComparisons.v1")
+        }
+    }
+
+    private func saveSession() {
+        let persisted = tabs.filter { !$0.sources.isEmpty }
+        let selectedIndex = persisted.firstIndex { $0.id == selection } ?? max(0, persisted.count - 1)
+        let saved = SavedWorkspace(
+            tabs: persisted.map { $0.sources.map { $0.standardizedFileURL.path } },
+            selectedIndex: selectedIndex
+        )
+        if let data = try? JSONEncoder().encode(saved) {
+            UserDefaults.standard.set(data, forKey: "savedWorkspace.v1")
+        }
     }
 
     private func openDeepLink(_ url: URL) async {
         guard url.host == "compare" || url.host == "diff",
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            errorMessage = "Unsupported Mac Diff Studio link."
+            errorMessage = "Unsupported Vellograph link."
             return
         }
         let paths = (components.queryItems ?? []).filter { $0.name == "file" }.compactMap(\.value)

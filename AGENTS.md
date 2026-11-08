@@ -1,4 +1,4 @@
-# Mac Diff Studio agent guidance
+# Vellograph agent guidance
 
 - This is an independent Swift 6/macOS 27 application. Do not inspect,
   decompile, copy, or redistribute proprietary Kaleidoscope internals or assets.

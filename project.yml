@@ -1,11 +1,11 @@
-name: MacDiffStudio
+name: Vellograph
 options:
   bundleIdPrefix: io.github.michaeldadi
   deploymentTarget:
     macOS: "27.0"
   generateEmptyDirectories: true
 packages:
-  MacDiffStudioCore:
+  VellographCore:
     path: .
   Sparkle:
     url: https://github.com/sparkle-project/Sparkle
@@ -18,7 +18,7 @@ settings:
     MACOSX_DEPLOYMENT_TARGET: "27.0"
     GENERATE_INFOPLIST_FILE: NO
 targets:
-  MacDiffStudio:
+  Vellograph:
     type: application
     platform: macOS
     sources:
@@ -26,29 +26,29 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: Mac Diff Studio
-        CFBundleShortVersionString: "0.1.1"
-        CFBundleVersion: "2"
+        CFBundleDisplayName: Vellograph
+        CFBundleShortVersionString: "0.2.0"
+        CFBundleVersion: "3"
         LSApplicationCategoryType: public.app-category.developer-tools
-        SUFeedURL: https://michaeldadi.github.io/mac-diff-studio/appcast.xml
+        SUFeedURL: https://michaeldadi.github.io/vellograph/appcast.xml
         SUPublicEDKey: VSfGne1/1drahXuPUd0BdomB2P/sUNppRjTtKihb0+8=
         SUEnableAutomaticChecks: true
         SUAllowsAutomaticUpdates: true
         CFBundleURLTypes:
-          - CFBundleURLName: Mac Diff Studio
+          - CFBundleURLName: Vellograph
             CFBundleURLSchemes:
-              - macdiffstudio
+              - vellograph
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.michaeldadi.macdiffstudio
-        PRODUCT_NAME: Mac Diff Studio
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.michaeldadi.vellograph
+        PRODUCT_NAME: Vellograph
         INFOPLIST_FILE: App/Info.plist
     dependencies:
-      - package: MacDiffStudioCore
+      - package: VellographCore
         product: DiffCore
-      - package: MacDiffStudioCore
+      - package: VellographCore
         product: GitCore
-      - package: MacDiffStudioCore
+      - package: VellographCore
         product: FolderCore
       - package: Sparkle
     scheme:

@@ -1,6 +1,8 @@
 # Two-version update proof (2026-11-07)
 
-This is a local development proof, not a public release qualification.
+This is a local development proof under the former Mac Diff Studio name, not a
+public release qualification. Vellograph has a new bundle identity and update
+feed; repeat this proof for Vellograph before releasing it.
 
 ## Tested on this Mac
 

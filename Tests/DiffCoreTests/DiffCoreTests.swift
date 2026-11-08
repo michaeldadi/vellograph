@@ -23,6 +23,52 @@ import Testing
     #expect(!result.hunks.isEmpty)
 }
 
+@Test func diffOperationsRemainOrderedAndEqualLinesMatch() throws {
+    var seed: UInt64 = 0x6d616364696666
+    func next(_ count: Int) -> Int {
+        seed = seed &* 6364136223846793005 &+ 1442695040888963407
+        return Int((seed >> 32) % UInt64(count))
+    }
+    let alphabet = ["a\n", "b\n", "c\r\n", "x", "\n"]
+    for _ in 0..<500 {
+        let old = try TextSnapshot(text: (0..<next(35)).map { _ in alphabet[next(alphabet.count)] }.joined())
+        let new = try TextSnapshot(text: (0..<next(35)).map { _ in alphabet[next(alphabet.count)] }.joined())
+        let result = try DiffEngine.compare(old.lines, new.lines)
+        var oldIndices: [Int] = []
+        var newIndices: [Int] = []
+        for operation in result.operations {
+            switch operation {
+            case .equal(let left, let right):
+                #expect(old.lines[left] == new.lines[right])
+                oldIndices.append(left)
+                newIndices.append(right)
+            case .delete(let left): oldIndices.append(left)
+            case .insert(let right): newIndices.append(right)
+            }
+        }
+        #expect(oldIndices == Array(old.lines.indices))
+        #expect(newIndices == Array(new.lines.indices))
+    }
+}
+
+@Test func alignedRowsPreserveBothInputOrders() throws {
+    let old = try TextSnapshot(text: "a\nold 1\nold 2\nz\n")
+    let new = try TextSnapshot(text: "a\nnew\nz\n")
+    let diff = try DiffEngine.compare(old.lines, new.lines)
+    let rows = DiffDisplay.rows(for: diff.operations)
+    #expect(rows.compactMap(\.oldIndex) == Array(old.lines.indices))
+    #expect(rows.compactMap(\.newIndex) == Array(new.lines.indices))
+    #expect(rows.contains { $0.oldIndex != nil && $0.newIndex == nil })
+}
+
+@Test func wordDifferencePreservesTextAndMarksOnlyReplacement() {
+    let difference = WordDiff.compare("total = 10", "total = 20")
+    #expect(difference.old.map(\.text).joined() == "total = 10")
+    #expect(difference.new.map(\.text).joined() == "total = 20")
+    #expect(difference.old.filter(\.changed).map(\.text).joined() == "10")
+    #expect(difference.new.filter(\.changed).map(\.text).joined() == "20")
+}
+
 @Test func nonOverlappingThreeWayChangesMergeAutomatically() throws {
     let base = try TextSnapshot(text: "a\nb\nc\n")
     let ours = try TextSnapshot(text: "A\nb\nc\n")

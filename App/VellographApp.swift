@@ -2,7 +2,7 @@ import SwiftUI
 import Sparkle
 
 @main
-struct MacDiffStudioApp: App {
+struct VellographApp: App {
     @State private var workspace = WorkspaceModel()
     private let updater = SPUStandardUpdaterController(
         startingUpdater: true,
@@ -11,7 +11,7 @@ struct MacDiffStudioApp: App {
     )
 
     var body: some Scene {
-        WindowGroup("Mac Diff Studio") {
+        WindowGroup("Vellograph") {
             WorkspaceView(workspace: workspace)
                 .frame(minWidth: 900, minHeight: 580)
                 .onOpenURL { url in

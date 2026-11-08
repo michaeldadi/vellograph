@@ -1,0 +1,391 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		24324F0FEC32E9C1A13F1833 /* DiffCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6E289D6B8401B8F9B2E4C9B2 /* DiffCore */; };
+		2541229C5F7A37073B768AF7 /* RepositoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B0006A4716C1EC8EA92F6B /* RepositoryView.swift */; };
+		43FD5A5CD566D07E08051404 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = FF2DA6EC61B4EB07FD74455F /* Sparkle */; };
+		4F362CA96C2C7A99EE743986 /* FolderComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72AF75D46B8FF13BD079C6E7 /* FolderComparisonView.swift */; };
+		5C75875A1B1D01DA6CC75C9B /* GitCore in Frameworks */ = {isa = PBXBuildFile; productRef = 579A254CA749B06D39964FD0 /* GitCore */; };
+		5D760E23EE044AD90C51BBFA /* FolderCore in Frameworks */ = {isa = PBXBuildFile; productRef = 89368620C01A821B2FE33F2F /* FolderCore */; };
+		60A2904C8787E2EEA777B7C0 /* MergeComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1E47BBE24D46A876980B6C /* MergeComparisonView.swift */; };
+		773DDA1B578B76DF31E1D2ED /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 090AF20BFF75BF8F0DB49992 /* WorkspaceView.swift */; };
+		7BD027A6C61FE7D86B0B52A1 /* TextComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6915230922B0C59B00AEEDD3 /* TextComparisonView.swift */; };
+		98D5D13F6018DC61CB665D52 /* WorkspaceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F46BEB226F22AC4985BBD5A /* WorkspaceModel.swift */; };
+		C3D05A0E5326FB8E58F8B373 /* VellographApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BDB4669A4B412824BBFAD0F /* VellographApp.swift */; };
+		F6929E04861F81820B6718A9 /* ImageComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3C2AFD9D6BE40FCD1FEC158 /* ImageComparisonView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		090AF20BFF75BF8F0DB49992 /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
+		6915230922B0C59B00AEEDD3 /* TextComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextComparisonView.swift; sourceTree = "<group>"; };
+		6BDB4669A4B412824BBFAD0F /* VellographApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VellographApp.swift; sourceTree = "<group>"; };
+		72AF75D46B8FF13BD079C6E7 /* FolderComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderComparisonView.swift; sourceTree = "<group>"; };
+		7A1E47BBE24D46A876980B6C /* MergeComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergeComparisonView.swift; sourceTree = "<group>"; };
+		9F46BEB226F22AC4985BBD5A /* WorkspaceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceModel.swift; sourceTree = "<group>"; };
+		A6B0006A4716C1EC8EA92F6B /* RepositoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryView.swift; sourceTree = "<group>"; };
+		AEFEC63F6EFC386170042884 /* vellograph */ = {isa = PBXFileReference; lastKnownFileType = folder; name = vellograph; path = .; sourceTree = SOURCE_ROOT; };
+		D6ECD86406C39516580E042E /* Vellograph.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Vellograph.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DCC5ABEB15A75312F50EE637 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E3C2AFD9D6BE40FCD1FEC158 /* ImageComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageComparisonView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A01066A736171F6378F64FB5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				24324F0FEC32E9C1A13F1833 /* DiffCore in Frameworks */,
+				5C75875A1B1D01DA6CC75C9B /* GitCore in Frameworks */,
+				5D760E23EE044AD90C51BBFA /* FolderCore in Frameworks */,
+				43FD5A5CD566D07E08051404 /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		165E782522AA2C565D753B9A /* App */ = {
+			isa = PBXGroup;
+			children = (
+				72AF75D46B8FF13BD079C6E7 /* FolderComparisonView.swift */,
+				E3C2AFD9D6BE40FCD1FEC158 /* ImageComparisonView.swift */,
+				DCC5ABEB15A75312F50EE637 /* Info.plist */,
+				7A1E47BBE24D46A876980B6C /* MergeComparisonView.swift */,
+				A6B0006A4716C1EC8EA92F6B /* RepositoryView.swift */,
+				6915230922B0C59B00AEEDD3 /* TextComparisonView.swift */,
+				6BDB4669A4B412824BBFAD0F /* VellographApp.swift */,
+				9F46BEB226F22AC4985BBD5A /* WorkspaceModel.swift */,
+				090AF20BFF75BF8F0DB49992 /* WorkspaceView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		3C2B1ABD22EF21AC4A39A020 = {
+			isa = PBXGroup;
+			children = (
+				165E782522AA2C565D753B9A /* App */,
+				C0F044238F2DDAD28180B28F /* Packages */,
+				E9DC5096A0BEEE64861E3D49 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C0F044238F2DDAD28180B28F /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				AEFEC63F6EFC386170042884 /* vellograph */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		E9DC5096A0BEEE64861E3D49 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D6ECD86406C39516580E042E /* Vellograph.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		538D3C201ED18245BB6DCCA6 /* Vellograph */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 79758D9534FED9B0AC8AF584 /* Build configuration list for PBXNativeTarget "Vellograph" */;
+			buildPhases = (
+				41C030FDEB8A3BA6C443E4A7 /* Sources */,
+				A01066A736171F6378F64FB5 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Vellograph;
+			packageProductDependencies = (
+				6E289D6B8401B8F9B2E4C9B2 /* DiffCore */,
+				579A254CA749B06D39964FD0 /* GitCore */,
+				89368620C01A821B2FE33F2F /* FolderCore */,
+				FF2DA6EC61B4EB07FD74455F /* Sparkle */,
+			);
+			productName = Vellograph;
+			productReference = D6ECD86406C39516580E042E /* Vellograph.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		83028C75431BAEC581267A5D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 15A6159AC1C947D0E1CEA487 /* Build configuration list for PBXProject "Vellograph" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 3C2B1ABD22EF21AC4A39A020;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				DFD8DE11460B40D678DC7F90 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				9D3AED5940C52898E0834983 /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E9DC5096A0BEEE64861E3D49 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				538D3C201ED18245BB6DCCA6 /* Vellograph */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		41C030FDEB8A3BA6C443E4A7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F362CA96C2C7A99EE743986 /* FolderComparisonView.swift in Sources */,
+				F6929E04861F81820B6718A9 /* ImageComparisonView.swift in Sources */,
+				60A2904C8787E2EEA777B7C0 /* MergeComparisonView.swift in Sources */,
+				2541229C5F7A37073B768AF7 /* RepositoryView.swift in Sources */,
+				7BD027A6C61FE7D86B0B52A1 /* TextComparisonView.swift in Sources */,
+				C3D05A0E5326FB8E58F8B373 /* VellographApp.swift in Sources */,
+				98D5D13F6018DC61CB665D52 /* WorkspaceModel.swift in Sources */,
+				773DDA1B578B76DF31E1D2ED /* WorkspaceView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		79C5E188BB37E95A5768B12F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.michaeldadi.vellograph;
+				PRODUCT_NAME = Vellograph;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		80C5FB8FD47BEA1756C0E4D9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		C2E193F09DADF1F32AD2AC66 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.michaeldadi.vellograph;
+				PRODUCT_NAME = Vellograph;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		D962859F1648E66283EE4713 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		15A6159AC1C947D0E1CEA487 /* Build configuration list for PBXProject "Vellograph" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D962859F1648E66283EE4713 /* Debug */,
+				80C5FB8FD47BEA1756C0E4D9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		79758D9534FED9B0AC8AF584 /* Build configuration list for PBXNativeTarget "Vellograph" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C2E193F09DADF1F32AD2AC66 /* Debug */,
+				79C5E188BB37E95A5768B12F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		9D3AED5940C52898E0834983 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		DFD8DE11460B40D678DC7F90 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.10.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		579A254CA749B06D39964FD0 /* GitCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GitCore;
+		};
+		6E289D6B8401B8F9B2E4C9B2 /* DiffCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DiffCore;
+		};
+		89368620C01A821B2FE33F2F /* FolderCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FolderCore;
+		};
+		FF2DA6EC61B4EB07FD74455F /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DFD8DE11460B40D678DC7F90 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 83028C75431BAEC581267A5D /* Project object */;
+}

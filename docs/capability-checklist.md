@@ -86,8 +86,8 @@ Sources: https://kaleidoscope.app/help/docs/command-line-tool,
 https://kaleidoscope.app/help/docs/kaleidoscope-url-scheme,
 https://kaleidoscope.app/help/docs/kaleidoscope-prism, and installed Integration guide.
 
-- [ ] `macdiff` diff/merge/changeset/working-copy, stdin, snapshots, wait and exit codes.
-- [ ] Same-user IPC and original `macdiffstudio://` scheme.
+- [ ] `vellograph` diff/merge/changeset/working-copy, stdin, snapshots, wait and exit codes.
+- [ ] Same-user IPC and original `vellograph://` scheme.
 - [ ] Reversible opt-in Git difftool/mergetool setup.
 - [ ] Finder Services, Share Extension, Shortcuts, and menu bar drop helper.
 - [ ] Local recipes for Xcode, VS Code, JetBrains, Android Studio, BBEdit, TextMate.

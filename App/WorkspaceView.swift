@@ -42,6 +42,7 @@ struct WorkspaceView: View {
             Task { await workspace.open(urls: urls) }
             return true
         }
+        .task { await workspace.restoreSession() }
     }
 
     private var tabStrip: some View {
@@ -63,7 +64,7 @@ struct WorkspaceView: View {
                     .padding(.vertical, 7)
                     .background(workspace.selection == tab.id ? Color.accentColor.opacity(0.16) : Color.clear,
                                 in: RoundedRectangle(cornerRadius: 8))
-                    .onTapGesture { workspace.selection = tab.id }
+                    .onTapGesture { workspace.select(tab.id) }
                 }
             }.padding(6)
         }
@@ -73,6 +74,7 @@ struct WorkspaceView: View {
     @ViewBuilder private func content(for tab: ComparisonTab) -> some View {
         switch tab.content {
         case .text(let comparison): TextComparisonView(comparison: comparison)
+        case .merge(let comparison): MergeComparisonView(comparison: comparison)
         case .folders(let entries): FolderComparisonView(entries: entries)
         case .images(let left, let right): ImageComparisonView(left: left, right: right)
         case .repository(let repository): RepositoryView(repository: repository, workspace: workspace)
@@ -81,14 +83,35 @@ struct WorkspaceView: View {
     }
 
     private var welcome: some View {
-        ContentUnavailableView {
-            Label("Mac Diff Studio", systemImage: "square.split.2x1")
-        } description: {
-            Text("Open two files or folders, drop them here, or compare clipboard text.")
-        } actions: {
-            Button("Open Files or Folders…") { workspace.chooseFiles() }
-                .buttonStyle(.borderedProminent)
+        VStack(spacing: 18) {
+            ContentUnavailableView {
+                Label("Vellograph", systemImage: "square.split.2x1")
+            } description: {
+                Text("Open two sources to compare or three text files in base, local, remote order to merge.")
+            } actions: {
+                Button("Open Files or Folders…") { workspace.chooseFiles() }
+                    .buttonStyle(.borderedProminent)
+            }
+            if !workspace.recentComparisons.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Recent Comparisons")
+                        .font(.headline)
+                    ForEach(workspace.recentComparisons) { recent in
+                        Button {
+                            workspace.reopen(recent)
+                        } label: {
+                            Label(recent.title, systemImage: recent.paths.count == 1 ? "doc" : "square.split.2x1")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                        .help(recent.paths.joined(separator: " · "))
+                    }
+                }
+                .frame(maxWidth: 500, alignment: .leading)
+            }
         }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

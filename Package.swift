@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "MacDiffStudioCore",
+    name: "VellographCore",
     platforms: [.macOS(.v27)],
     products: [
         .library(name: "DiffCore", targets: ["DiffCore"]),
