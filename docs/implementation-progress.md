@@ -514,7 +514,11 @@ local use, hosted CI, and release qualification.
 - Session restore now reports how many saved comparisons it skipped when a
   source file has disappeared. The existing native restore test checks that
   message before reopening the comparison from Recents and checking its error.
-  This updated native workflow is pending a hosted run.
+  Hosted run `42510180595` passed its build job and the other 13 UI cases;
+  the new assertion expected one skipped tab, but the test had opened the same
+  comparison twice before relaunch, so two tabs were saved. The failing run's
+  screen recording showed the correct two-tab message. The assertion now checks
+  for two skipped tabs. This corrected workflow is pending a hosted run.
 
 ## Next verification and implementation
 

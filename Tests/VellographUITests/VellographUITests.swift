@@ -60,7 +60,7 @@ import XCTest
         app.launch()
         XCTAssertTrue(app.staticTexts["Recent Comparisons"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts[
-            "1 saved comparison was skipped because a source is no longer available."
+            "2 saved comparisons were skipped because a source is no longer available."
         ].exists)
         recent.click()
         XCTAssertTrue(app.staticTexts["Unable to Open"].waitForExistence(timeout: 10))
