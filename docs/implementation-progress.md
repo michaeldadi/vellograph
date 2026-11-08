@@ -2,8 +2,8 @@
 
 This is a development checkpoint. The release contract remains
 [`capability-checklist.md`](capability-checklist.md); none of its full workflow
-items is qualified yet. The source changes described here are local and
-uncommitted.
+items is qualified yet. The evidence below distinguishes checked-in changes,
+local use, hosted CI, and release qualification.
 
 ## Implemented and exercised on this Mac
 
@@ -347,6 +347,9 @@ uncommitted.
   loss of accessibility authorization affected the remaining cases. The
   earlier focused and full passes remain recorded above; this latest rerun is
   not a passing release gate.
+- A separate `native-ui` job now invokes the eight Xcode UI tests on the
+  hosted macOS 27 runner with parallel UI execution disabled. It remains
+  unqualified until the hosted job completes successfully.
 
 ## Next verification and implementation
 

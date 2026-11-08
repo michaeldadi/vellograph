@@ -66,3 +66,27 @@ jobs:
           /usr/bin/time -l .build/release/vellograph-bench --image \
             "$RUNNER_TEMP/vellograph-image-fixtures/a.png" \
             "$RUNNER_TEMP/vellograph-image-fixtures/b.png"
+
+  native-ui:
+    runs-on: xcode-27
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Test native workflows
+        run: |
+          xcodebuild -quiet \
+            -project Vellograph.xcodeproj \
+            -scheme Vellograph \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/VellographUIDerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/VellographUI.xcresult" \
+            -parallel-testing-enabled NO \
+            -only-testing:VellographUITests \
+            -jobs 3 \
+            CODE_SIGNING_ALLOWED=NO \
+            test
