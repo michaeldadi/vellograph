@@ -40,6 +40,9 @@ uncommitted.
   163,840-line, 9.27 MiB pair opens and jumps to its changed line in the native
   app. A 4,000-line Swift fixture retained syntax and changed-word colors in
   that virtual view. Wrapping and precise first-viewport timing remain open.
+  A fresh native screenshot at the 900-point minimum window width showed
+  unwrapped text clipped at the pane divider without drawing into the other
+  pane.
 - Three-way text merge presents conflicts, requires choices, permits editing,
   and saves through a checked replacement or exclusive create path.
 - PDF and Word text extraction is supported. Binary or unsupported content
@@ -307,11 +310,29 @@ uncommitted.
   images; those remain open image acceptance cases.
 - The image toolbar now has separate mode and zoom rows at the minimum window
   width. A native UI test checked that Actual Pixels, Navigator, and
-  Perspective Align stay within the window without crossing each other.
+  Perspective Align stay within the window without crossing each other. The
+  installed app's two-up image view was also visually checked at that width.
 - Native UI tests now use a separate preference suite, leaving the real app's
   recent comparisons and shelf untouched. A test reopened a recent text pair,
   restored its selected tab after relaunch, then removed a source and confirmed
   the welcome view showed an error when reopening that stale recent item.
+- Another isolated native UI test added two files to the source shelf, moved
+  their order, renamed one with the keyboard, disabled comparison by selecting
+  the same entry as A and B, and confirmed the order and label survived a
+  relaunch before removing an entry. Clipboard save, drag/drop, and full
+  keyboard navigation still need direct tests.
+- The installed `vellograph diff --wait` held its process until its disposable
+  comparison tab was closed, then returned status 0. An unresolved CLI merge
+  closed without output returned status 1 and created no file. Repeating that
+  merge, choosing Remote in the native app, building, and saving the requested
+  output returned status 0; the output bytes matched Remote and both source
+  files stayed unchanged. Transport-failure behavior remains open.
+- Git's actual `mergetool` host invoked the installed Vellograph command for
+  a disposable text conflict. Closing its unresolved tab made Git report a
+  failed merge and kept all three unmerged index stages. Repeating the host
+  invocation, selecting Remote, and saving `conflict.txt` returned success,
+  wrote the expected bytes, and cleared the index conflict. Repository-local
+  tool settings were then uninstalled and read back as absent.
 
 ## Next verification and implementation
 

@@ -63,6 +63,53 @@ import XCTest
         XCTAssertTrue(app.staticTexts["Unable to Open"].waitForExistence(timeout: 10))
     }
 
+    func testShelfOrderRenameSelectionAndRestoration() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")
+        let suite = "io.github.michaeldadi.vellograph.ui-test.\(UUID().uuidString)"
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: folder)
+            UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite)
+        }
+        try Data("a\n".utf8).write(to: folder.appendingPathComponent("a.txt"))
+        try Data("b\n".utf8).write(to: folder.appendingPathComponent("b.txt"))
+
+        let app = XCUIApplication()
+        app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
+        app.launchEnvironment["VELLOGRAPH_UI_TEST_SUITE"] = suite
+        app.launch()
+        app.buttons["Add to Shelf…"].click()
+        XCTAssertTrue(app.dialogs["Open"].waitForExistence(timeout: 5))
+        app.typeKey("g", modifierFlags: [.command, .shift])
+        app.typeText(folder.path)
+        app.typeKey(XCUIKeyboardKey.return.rawValue, modifierFlags: [])
+        app.typeKey("a", modifierFlags: .command)
+        app.dialogs["Open"].buttons["Open"].click()
+
+        let labels = app.textFields.matching(identifier: "Source label")
+        XCTAssertEqual(labels.count, 2)
+        let first = labels.element(boundBy: 0).value as? String
+        app.buttons["Move Down"].firstMatch.click()
+        XCTAssertNotEqual(labels.element(boundBy: 0).value as? String, first)
+        labels.element(boundBy: 0).click()
+        app.typeKey("a", modifierFlags: .command)
+        app.typeText("Renamed")
+        app.typeKey(XCUIKeyboardKey.return.rawValue, modifierFlags: [])
+        XCTAssertEqual(labels.element(boundBy: 0).value as? String, "Renamed")
+        app.buttons["Select Renamed as A"].click()
+        app.buttons["Select Renamed as B"].click()
+        XCTAssertFalse(app.buttons["Compare A/B"].isEnabled)
+
+        app.terminate()
+        app.launch()
+        let restored = app.textFields.matching(identifier: "Source label")
+        XCTAssertEqual(restored.count, 2)
+        XCTAssertEqual(restored.element(boundBy: 0).value as? String, "Renamed")
+        app.buttons["Remove"].firstMatch.click()
+        XCTAssertEqual(app.textFields.matching(identifier: "Source label").count, 1)
+    }
+
     func testOpenTwoTextFilesAndNavigateChange() throws {
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")

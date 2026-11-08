@@ -37,6 +37,10 @@ vellograph git-tool uninstall --global
 
 Uninstall refuses to overwrite a Git tool value changed since installation;
 the backup remains available for manual review. Local settings for a linked
-worktree use the repository's common Git configuration. This workflow has
-passed disposable-repository difftool and mergetool tests. It has not yet been
-qualified against the installed app or a final release package.
+worktree use the repository's common Git configuration. A disposable conflict
+invoked through Git's actual `mergetool` host on this Mac returned failure
+when the Vellograph tab was closed unresolved; the index kept its three
+unmerged stages. Repeating it, saving a Remote resolution, and exiting
+returned success, wrote the exact selected bytes, and cleared those stages.
+Repository-local uninstall then removed the tool settings. The final release
+package still needs this host check.
