@@ -57,6 +57,11 @@ private struct FolderRootIdentity: Sendable, Equatable {
     let inode: UInt64
 }
 
+private struct FolderEntryIdentity: Equatable {
+    let device: UInt64
+    let inode: UInt64
+}
+
 public struct FolderApplyResult: Sendable {
     public let appliedCount: Int
     public let recoveryFolder: URL?
@@ -198,15 +203,22 @@ public struct FolderOperationPlan: Sendable {
 
     // The hook lets tests exercise a change in the narrow interval between
     // the final fingerprint and the filesystem move.
-    func apply(afterFinalTargetCheck: ((FolderAction) throws -> Void)?) throws -> FolderApplyResult {
+    func apply(afterFinalTargetCheck: ((FolderAction) throws -> Void)?,
+               afterDestinationOpen: ((FolderAction) throws -> Void)? = nil) throws -> FolderApplyResult {
         try preflight()
         guard !actions.isEmpty else { return FolderApplyResult(appliedCount: 0, recoveryFolder: nil) }
         let fm = FileManager.default
+        let destinationHandle = try FolderDirectoryHandle(
+            url: URL(fileURLWithPath: destinationIdentity.resolvedPath, isDirectory: true))
+        guard destinationHandle.identityMatches(destinationIdentity) else {
+            throw FolderOperationError.stalePreview("folder root")
+        }
         let identifier = UUID().uuidString
         let parent = destinationRoot.deletingLastPathComponent()
         let stage = parent.appendingPathComponent(".vellograph-stage-\(identifier)", isDirectory: true)
         let recovery = parent.appendingPathComponent(".vellograph-recovery-\(identifier)", isDirectory: true)
-        try fm.createDirectory(at: stage, withIntermediateDirectories: false)
+        try fm.createDirectory(at: stage, withIntermediateDirectories: false,
+                               attributes: [.posixPermissions: 0o700])
         defer { try? fm.removeItem(at: stage) }
 
         // Copy every source item before touching the destination. A failed
@@ -220,21 +232,26 @@ public struct FolderOperationPlan: Sendable {
             }
         }
         try preflight()
-        try fm.createDirectory(at: recovery, withIntermediateDirectories: false)
+        let stageHandle = try FolderDirectoryHandle(url: stage)
+        try fm.createDirectory(at: recovery, withIntermediateDirectories: false,
+                               attributes: [.posixPermissions: 0o700])
+        let recoveryHandle = try FolderDirectoryHandle(url: recovery)
         struct Applied {
-            let path: String
             let backup: URL?
+            let targetParent: FolderDirectoryHandle
+            let backupParent: FolderDirectoryHandle?
+            let name: String
             let restoreDirectory: Bool
             let createdDirectory: Bool
-            let restorePermissions: NSNumber?
+            let restorePermissions: mode_t?
             var installedFingerprint: FolderFingerprint?
+            var installedIdentity: FolderEntryIdentity?
         }
         var applied: [Applied] = []
         do {
             for action in actions {
                 try Task<Never, Never>.checkCancellation()
                 try validateRootIdentities()
-                let target = destinationRoot.appendingPathComponent(action.path)
                 try Self.validateDestinationParents(destinationRoot, path: action.path)
                 if action.itemKind == .symbolicLink && action.kind != .remove {
                     try Self.validateSymbolicLink(
@@ -243,82 +260,117 @@ public struct FolderOperationPlan: Sendable {
                         sourceRoot: sourceRoot, destinationRoot: destinationRoot,
                         path: action.path)
                 }
-                guard try Self.fingerprintAt(target) == action.destinationFingerprint else {
+                let (initialParent, name) = try destinationHandle.parent(for: action.path)
+                guard try initialParent.fingerprint(name) == action.destinationFingerprint else {
                     throw FolderOperationError.stalePreview(action.path)
                 }
                 try afterFinalTargetCheck?(action)
                 try validateRootIdentities()
                 try Self.validateDestinationParents(destinationRoot, path: action.path)
-                guard try Self.fingerprintAt(target) == action.destinationFingerprint else {
+                let (targetParent, targetName) = try destinationHandle.parent(for: action.path)
+                guard try targetParent.fingerprint(targetName) == action.destinationFingerprint else {
                     throw FolderOperationError.stalePreview(action.path)
                 }
+                let originalIdentity = try targetParent.entryIdentity(targetName)
+                try afterDestinationOpen?(action)
                 if action.kind == .remove, action.itemKind == .directory {
                     // rmdir is atomic and fails if an excluded or newly arrived
                     // child exists. Moving the whole directory would silently
                     // remove such a child from the user's visible scope.
-                    let permissions = try fm.attributesOfItem(atPath: target.path)[.posixPermissions] as? NSNumber
-                    guard Darwin.rmdir(target.path) == 0 else {
+                    let permissions = try targetParent.permissions(targetName)
+                    do { try targetParent.remove(targetName, directory: true) }
+                    catch { throw FolderOperationError.stalePreview(action.path) }
+                    applied.append(Applied(backup: nil,
+                                           targetParent: targetParent, backupParent: nil, name: targetName,
+                                           restoreDirectory: true, createdDirectory: false,
+                                           restorePermissions: permissions, installedFingerprint: nil,
+                                           installedIdentity: nil))
+                    let (currentParent, _) = try destinationHandle.parent(for: action.path)
+                    guard currentParent.sameDirectory(as: targetParent) else {
                         throw FolderOperationError.stalePreview(action.path)
                     }
-                    applied.append(Applied(path: action.path, backup: nil,
-                                           restoreDirectory: true, createdDirectory: false,
-                                           restorePermissions: permissions, installedFingerprint: nil))
+                    try validateRootIdentities()
                     continue
                 }
                 let backup: URL?
+                let backupParent: FolderDirectoryHandle?
                 if action.destinationFingerprint != nil {
                     let saved = recovery.appendingPathComponent(action.path)
-                    try fm.createDirectory(at: saved.deletingLastPathComponent(), withIntermediateDirectories: true)
-                    try fm.moveItem(at: target, to: saved)
+                    let (parent, backupName) = try recoveryHandle.parent(for: action.path, creating: true)
+                    try targetParent.move(targetName, to: parent, as: backupName)
                     backup = saved
+                    backupParent = parent
                 } else {
                     backup = nil
+                    backupParent = nil
                 }
-                applied.append(Applied(path: action.path, backup: backup,
+                applied.append(Applied(backup: backup,
+                                       targetParent: targetParent, backupParent: backupParent,
+                                       name: targetName,
                                        restoreDirectory: false,
                                        createdDirectory: action.kind == .createDirectory,
-                                       restorePermissions: nil, installedFingerprint: nil))
-                if let backup, try Self.fingerprintAt(backup) != action.destinationFingerprint {
+                                       restorePermissions: nil, installedFingerprint: nil,
+                                       installedIdentity: nil))
+                if let backupParent,
+                   (try backupParent.fingerprint(targetName) != action.destinationFingerprint ||
+                    backupParent.entryIdentity(targetName) != originalIdentity) {
                     throw FolderOperationError.stalePreview(action.path)
                 }
                 switch action.kind {
                 case .createDirectory:
-                    try fm.createDirectory(at: target, withIntermediateDirectories: false)
+                    do { try targetParent.makeDirectory(targetName) }
+                    catch let error as POSIXError where error.code == .EEXIST {
+                        throw FolderOperationError.stalePreview(action.path)
+                    }
                 case .create, .replace:
-                    try fm.moveItem(at: stage.appendingPathComponent(action.path), to: target)
+                    let (sourceParent, sourceName) = try stageHandle.parent(for: action.path)
+                    do { try sourceParent.move(sourceName, to: targetParent, as: targetName) }
+                    catch let error as POSIXError where error.code == .EEXIST {
+                        throw FolderOperationError.stalePreview(action.path)
+                    }
                 case .remove: break
                 }
                 applied[applied.count - 1].installedFingerprint = action.kind == .remove
                     ? nil : action.sourceFingerprint
+                applied[applied.count - 1].installedIdentity = try targetParent.entryIdentity(targetName)
+                let (currentParent, _) = try destinationHandle.parent(for: action.path)
+                guard currentParent.sameDirectory(as: targetParent) else {
+                    throw FolderOperationError.stalePreview(action.path)
+                }
+                try validateRootIdentities()
             }
         } catch {
             var rollbackFailed = false
             for operation in applied.reversed() {
-                let target = destinationRoot.appendingPathComponent(operation.path)
                 do {
-                    let current = try Self.fingerprintAt(target)
+                    let current = try operation.targetParent.fingerprint(operation.name)
+                    if operation.installedFingerprint == nil,
+                       operation.backup == nil, !operation.restoreDirectory, current != nil {
+                        // A new external item arrived before our exclusive
+                        // create. No part of this action touched that item.
+                        continue
+                    }
                     guard current == operation.installedFingerprint else {
                         throw FolderOperationError.rollbackFailed(recovery.path)
                     }
+                    if current != nil,
+                       try operation.targetParent.entryIdentity(operation.name) != operation.installedIdentity {
+                        throw FolderOperationError.rollbackFailed(recovery.path)
+                    }
                     if current != nil {
-                        if operation.createdDirectory {
-                            guard Darwin.rmdir(target.path) == 0 else {
-                                throw FolderOperationError.rollbackFailed(recovery.path)
-                            }
-                        } else {
-                            try fm.removeItem(at: target)
-                        }
+                        try operation.targetParent.remove(operation.name,
+                                                          directory: operation.createdDirectory)
                     }
                     if operation.restoreDirectory {
-                        let attributes = operation.restorePermissions.map {
-                            [FileAttributeKey.posixPermissions: $0]
+                        try operation.targetParent.makeDirectory(operation.name,
+                                                                 permissions: operation.restorePermissions ?? 0o777)
+                        if let permissions = operation.restorePermissions {
+                            try operation.targetParent.setPermissions(permissions,
+                                                                      for: operation.name)
                         }
-                        try fm.createDirectory(at: target, withIntermediateDirectories: false,
-                                               attributes: attributes)
                     }
-                    if let backup = operation.backup {
-                        try fm.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
-                        try fm.moveItem(at: backup, to: target)
+                    if let backupParent = operation.backupParent {
+                        try backupParent.move(operation.name, to: operation.targetParent)
                     }
                 } catch { rollbackFailed = true }
             }
@@ -509,5 +561,133 @@ public struct FolderOperationPlan: Sendable {
             return FolderFingerprint(kind: .file, digest: Array(hasher.finalize()))
         case .other: return FolderFingerprint(kind: .other, digest: nil)
         }
+    }
+}
+
+private final class FolderDirectoryHandle {
+    let fd: Int32
+
+    init(url: URL) throws {
+        fd = Darwin.open(url.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { throw Self.systemError() }
+    }
+
+    private init(fd: Int32) { self.fd = fd }
+
+    deinit { Darwin.close(fd) }
+
+    func identityMatches(_ identity: FolderRootIdentity) -> Bool {
+        var details = stat()
+        return fstat(fd, &details) == 0 &&
+            UInt64(details.st_dev) == identity.device && UInt64(details.st_ino) == identity.inode
+    }
+
+    func sameDirectory(as other: FolderDirectoryHandle) -> Bool {
+        var left = stat()
+        var right = stat()
+        return fstat(fd, &left) == 0 && fstat(other.fd, &right) == 0 &&
+            left.st_dev == right.st_dev && left.st_ino == right.st_ino
+    }
+
+    func parent(for path: String, creating: Bool = false) throws -> (FolderDirectoryHandle, String) {
+        let parts = path.split(separator: "/").map(String.init)
+        guard !parts.isEmpty, parts.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." }) else {
+            throw FolderOperationError.unsafeDestination(path)
+        }
+        let copy = dup(fd)
+        guard copy >= 0 else { throw Self.systemError() }
+        var current = FolderDirectoryHandle(fd: copy)
+        for part in parts.dropLast() {
+            if creating && mkdirat(current.fd, part, 0o700) != 0 && errno != EEXIST {
+                throw Self.systemError()
+            }
+            let next = openat(current.fd, part, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            guard next >= 0 else { throw FolderOperationError.unsafeDestination(path) }
+            current = FolderDirectoryHandle(fd: next)
+        }
+        return (current, parts[parts.count - 1])
+    }
+
+    func fingerprint(_ name: String) throws -> FolderFingerprint? {
+        var details = stat()
+        guard fstatat(fd, name, &details, AT_SYMLINK_NOFOLLOW) == 0 else {
+            if errno == ENOENT { return nil }
+            throw Self.systemError()
+        }
+        switch details.st_mode & mode_t(S_IFMT) {
+        case mode_t(S_IFDIR):
+            return FolderFingerprint(kind: .directory, digest: nil)
+        case mode_t(S_IFLNK):
+            var bytes = [UInt8](repeating: 0, count: Int(PATH_MAX))
+            let count = bytes.withUnsafeMutableBytes { buffer in
+                readlinkat(fd, name, buffer.baseAddress, buffer.count)
+            }
+            guard count >= 0, count < bytes.count else { throw Self.systemError() }
+            return FolderFingerprint(kind: .symbolicLink,
+                                     digest: Array(SHA256.hash(data: Data(bytes.prefix(count)))))
+        case mode_t(S_IFREG):
+            let fileFD = openat(fd, name, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+            guard fileFD >= 0 else { throw Self.systemError() }
+            let file = FileHandle(fileDescriptor: fileFD, closeOnDealloc: true)
+            defer { try? file.close() }
+            var opened = stat()
+            guard fstat(fileFD, &opened) == 0,
+                  opened.st_dev == details.st_dev, opened.st_ino == details.st_ino else {
+                throw FolderOperationError.stalePreview(name)
+            }
+            var hasher = SHA256()
+            while let chunk = try file.read(upToCount: 1_048_576), !chunk.isEmpty {
+                try Task<Never, Never>.checkCancellation()
+                hasher.update(data: chunk)
+            }
+            return FolderFingerprint(kind: .file, digest: Array(hasher.finalize()))
+        default:
+            return FolderFingerprint(kind: .other, digest: nil)
+        }
+    }
+
+    func entryIdentity(_ name: String) throws -> FolderEntryIdentity? {
+        var details = stat()
+        guard fstatat(fd, name, &details, AT_SYMLINK_NOFOLLOW) == 0 else {
+            if errno == ENOENT { return nil }
+            throw Self.systemError()
+        }
+        return FolderEntryIdentity(device: UInt64(details.st_dev), inode: UInt64(details.st_ino))
+    }
+
+    func move(_ name: String, to destination: FolderDirectoryHandle, as destinationName: String? = nil) throws {
+        guard renameatx_np(fd, name, destination.fd, destinationName ?? name,
+                           UInt32(RENAME_EXCL)) == 0 else {
+            throw Self.systemError()
+        }
+    }
+
+    func permissions(_ name: String) throws -> mode_t {
+        var details = stat()
+        guard fstatat(fd, name, &details, AT_SYMLINK_NOFOLLOW) == 0 else {
+            throw Self.systemError()
+        }
+        return details.st_mode & 0o7777
+    }
+
+    func makeDirectory(_ name: String, permissions: mode_t = 0o777) throws {
+        guard mkdirat(fd, name, permissions) == 0 else { throw Self.systemError() }
+    }
+
+    func remove(_ name: String, directory: Bool) throws {
+        guard unlinkat(fd, name, directory ? AT_REMOVEDIR : 0) == 0 else {
+            throw Self.systemError()
+        }
+    }
+
+    func setPermissions(_ permissions: mode_t, for name: String) throws {
+        let child = openat(fd, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard child >= 0 else { throw Self.systemError() }
+        defer { Darwin.close(child) }
+        guard fchmod(child, permissions) == 0 else { throw Self.systemError() }
+    }
+
+    private static func systemError() -> POSIXError {
+        POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
     }
 }

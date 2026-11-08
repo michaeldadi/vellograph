@@ -103,9 +103,19 @@ local use, hosted CI, and release qualification.
   restores that external edit without installing the source. This narrows the
   replacement race. A second final-check test swaps an existing destination
   parent for a link to an outside folder; the recheck rejects it and leaves
-  the outside file unchanged. Path-component swaps after that recheck still
-  require descriptor-based operations.
-  Other races and failure-injection work remain open.
+  the outside file unchanged. Destination actions and rollback now use open
+  directory descriptors and exclusive renames. Disposable tests swap a parent
+  for an outside link or an identical-looking directory after the descriptor
+  opens; both leave outside or replacement content untouched and restore the
+  original. A new file arriving after preview is preserved, and a destination
+  replaced with identical bytes but a different inode is restored rather than
+  accepted as the previewed item. Rollback also keeps a later external file
+  with identical bytes and retains the original in recovery for manual review.
+  Stage and recovery folders have mode 0700.
+  Staging still uses path-based copying. Crash recovery, same-directory entry
+  swaps during empty-directory removal, and broader failure-injection remain
+  open; these tests do not qualify folder mutation as fully race-free. The full
+  Swift package suite and Release app build pass locally with this change.
 - FSEvents refreshes text, folder, and Git views; pause/resume was exercised
   with disposable files in the native app.
 - A private Unix socket connects the `vellograph` CLI to the app, with

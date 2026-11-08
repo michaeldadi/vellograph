@@ -17,6 +17,9 @@ import Testing
     #expect(try String(contentsOf: destination.appendingPathComponent("file.txt"), encoding: .utf8) == "new")
     #expect(try String(contentsOf: destination.appendingPathComponent("extra.txt"), encoding: .utf8) == "keep")
     #expect(try String(contentsOf: result.recoveryFolder!.appendingPathComponent("file.txt"), encoding: .utf8) == "old")
+    let permissions = try FileManager.default.attributesOfItem(
+        atPath: result.recoveryFolder!.path)[.posixPermissions] as? NSNumber
+    #expect(permissions?.intValue == 0o700)
 }
 
 @Test func changedSourceInvalidatesPreviewBeforeWriting() throws {
@@ -93,6 +96,134 @@ import Testing
                        encoding: .utf8) == "outside")
     #expect(try String(contentsOf: root.appendingPathComponent("retained-sub/item.txt"),
                        encoding: .utf8) == "previewed")
+}
+
+@Test func pinnedDestinationParentNeverWritesThroughAReplacementLink() throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let sourceSubdirectory = source.appendingPathComponent("sub", isDirectory: true)
+    let destinationSubdirectory = destination.appendingPathComponent("sub", isDirectory: true)
+    let retained = root.appendingPathComponent("retained-sub", isDirectory: true)
+    let outside = root.appendingPathComponent("outside", isDirectory: true)
+    for directory in [sourceSubdirectory, destinationSubdirectory, outside] {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+    }
+    try Data("source".utf8).write(to: sourceSubdirectory.appendingPathComponent("item.txt"))
+    try Data("previewed".utf8).write(to: destinationSubdirectory.appendingPathComponent("item.txt"))
+    try Data("outside".utf8).write(to: outside.appendingPathComponent("item.txt"))
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["sub/item.txt"])
+    #expect(throws: FolderOperationError.self) {
+        try plan.apply(afterFinalTargetCheck: nil, afterDestinationOpen: { action in
+            guard action.path == "sub/item.txt" else { return }
+            try FileManager.default.moveItem(at: destinationSubdirectory, to: retained)
+            try FileManager.default.createSymbolicLink(atPath: destinationSubdirectory.path,
+                                                       withDestinationPath: outside.path)
+        })
+    }
+    #expect(try String(contentsOf: outside.appendingPathComponent("item.txt"),
+                       encoding: .utf8) == "outside")
+    #expect(try String(contentsOf: retained.appendingPathComponent("item.txt"),
+                       encoding: .utf8) == "previewed")
+}
+
+@Test func swappedDestinationParentWithMatchingBytesIsNotTreatedAsOriginal() throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let sourceSubdirectory = source.appendingPathComponent("sub", isDirectory: true)
+    let destinationSubdirectory = destination.appendingPathComponent("sub", isDirectory: true)
+    let retained = root.appendingPathComponent("retained-sub", isDirectory: true)
+    for directory in [sourceSubdirectory, destinationSubdirectory] {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+    }
+    try Data("source".utf8).write(to: sourceSubdirectory.appendingPathComponent("item.txt"))
+    try Data("previewed".utf8).write(to: destinationSubdirectory.appendingPathComponent("item.txt"))
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["sub/item.txt"])
+    #expect(throws: FolderOperationError.stalePreview("sub/item.txt")) {
+        try plan.apply(afterFinalTargetCheck: nil, afterDestinationOpen: { action in
+            guard action.path == "sub/item.txt" else { return }
+            try FileManager.default.moveItem(at: destinationSubdirectory, to: retained)
+            try FileManager.default.createDirectory(at: destinationSubdirectory,
+                                                    withIntermediateDirectories: false)
+            try Data("previewed".utf8).write(to: destinationSubdirectory.appendingPathComponent("item.txt"))
+        })
+    }
+    #expect(try String(contentsOf: destinationSubdirectory.appendingPathComponent("item.txt"),
+                       encoding: .utf8) == "previewed")
+    #expect(try String(contentsOf: retained.appendingPathComponent("item.txt"),
+                       encoding: .utf8) == "previewed")
+}
+
+@Test func fileArrivingAfterPreviewIsPreservedByExclusiveCreate() throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let sourceFile = source.appendingPathComponent("new.txt")
+    let destinationFile = destination.appendingPathComponent("new.txt")
+    try Data("source".utf8).write(to: sourceFile)
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["new.txt"])
+    #expect(throws: FolderOperationError.stalePreview("new.txt")) {
+        try plan.apply(afterFinalTargetCheck: nil, afterDestinationOpen: { action in
+            guard action.path == "new.txt" else { return }
+            try Data("external".utf8).write(to: destinationFile)
+        })
+    }
+    #expect(try String(contentsOf: destinationFile, encoding: .utf8) == "external")
+    #expect(try String(contentsOf: sourceFile, encoding: .utf8) == "source")
+}
+
+@Test func sameByteReplacementAfterFinalCheckIsRestored() throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let sourceFile = source.appendingPathComponent("file.txt")
+    let destinationFile = destination.appendingPathComponent("file.txt")
+    let retained = root.appendingPathComponent("retained-file.txt")
+    try Data("source".utf8).write(to: sourceFile)
+    try Data("previewed".utf8).write(to: destinationFile)
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["file.txt"])
+    #expect(throws: FolderOperationError.stalePreview("file.txt")) {
+        try plan.apply(afterFinalTargetCheck: nil, afterDestinationOpen: { action in
+            guard action.path == "file.txt" else { return }
+            try FileManager.default.moveItem(at: destinationFile, to: retained)
+            try Data("previewed".utf8).write(to: destinationFile)
+        })
+    }
+    #expect(try String(contentsOf: destinationFile, encoding: .utf8) == "previewed")
+    #expect(try String(contentsOf: retained, encoding: .utf8) == "previewed")
+}
+
+@Test func rollbackPreservesSameByteExternalReplacementAndRecovery() throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let first = destination.appendingPathComponent("a.txt")
+    let retained = root.appendingPathComponent("retained-a.txt")
+    for name in ["a.txt", "b.txt"] {
+        try Data("source-\(name)".utf8).write(to: source.appendingPathComponent(name))
+        try Data("old-\(name)".utf8).write(to: destination.appendingPathComponent(name))
+    }
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["a.txt", "b.txt"])
+    var caught: FolderOperationError?
+    do {
+        _ = try plan.apply(afterFinalTargetCheck: nil, afterDestinationOpen: { action in
+            guard action.path == "b.txt" else { return }
+            try FileManager.default.moveItem(at: first, to: retained)
+            try Data("source-a.txt".utf8).write(to: first)
+            throw FolderOperationError.stalePreview("b.txt")
+        })
+    } catch let error as FolderOperationError {
+        caught = error
+    }
+    if case .rollbackFailed(let recoveryPath)? = caught {
+        #expect(try String(contentsOf: first, encoding: .utf8) == "source-a.txt")
+        #expect(try String(contentsOf: retained, encoding: .utf8) == "source-a.txt")
+        #expect(try String(contentsOf: URL(fileURLWithPath: recoveryPath)
+            .appendingPathComponent("a.txt"), encoding: .utf8) == "old-a.txt")
+    } else {
+        Issue.record("Expected rollback to keep the external file and recovery copy")
+    }
 }
 
 @Test func replacingDestinationRootInvalidatesIdenticalLookingPreview() throws {
