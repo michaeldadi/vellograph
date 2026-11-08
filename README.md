@@ -2,7 +2,8 @@
 
 An independent, native macOS 27 diff and merge application. The project is
 under active development; the [capability checklist](docs/capability-checklist.md)
-tracks what is implemented and tested.
+tracks what is implemented and tested. The [implementation plan](docs/implementation-plan.md)
+sets the remaining work and release gates.
 
 ## Build
 

@@ -172,9 +172,14 @@ struct ImageComparisonView: View {
                         Text("Sensitivity").fixedSize()
                         Slider(value: $threshold, in: 0...0.3).frame(width: 180)
                         if let mask {
-                            Text("\(mask.changedPixelCount.formatted()) of \(mask.totalPixelCount.formatted()) pixels differ")
+                            Text(mask.isPreview
+                                 ? "Preview: \(mask.changedPixelCount.formatted()) of \(mask.totalPixelCount.formatted()) sampled pixels differ"
+                                 : "\(mask.changedPixelCount.formatted()) of \(mask.totalPixelCount.formatted()) pixels differ")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                                .help(mask.isPreview
+                                      ? "Large images are compared at a reduced resolution. This count is not exact at source resolution."
+                                      : "Exact source-resolution pixel count")
                         }
                         Spacer()
                     }
@@ -323,7 +328,10 @@ struct ImageComparisonView: View {
                             }
                         }
                     } else {
-                        ContentUnavailableView("Image dimensions unavailable", systemImage: "photo.badge.exclamationmark")
+                        ContentUnavailableView(sizeA == nil || sizeB == nil
+                                               ? "Image dimensions unavailable"
+                                               : "Image pair exceeds safe display size",
+                                               systemImage: "photo.badge.exclamationmark")
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

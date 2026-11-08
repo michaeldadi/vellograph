@@ -62,7 +62,8 @@ public struct ImageCanvas: Sendable, Equatable {
         guard !leftMaxX.overflow, !rightMaxX.overflow,
               !leftMaxY.overflow, !rightMaxY.overflow,
               width > 0, height > 0,
-              width <= 25_000_000 / height else {
+              width <= 100_000, height <= 100_000,
+              width <= 200_000_000 / height else {
             throw PixelDifferenceError.imageTooLarge
         }
         self.width = width

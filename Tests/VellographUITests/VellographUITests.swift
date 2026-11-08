@@ -161,6 +161,34 @@ import XCTest
         }
     }
 
+    func testLargeImageShowsLabeledDifferencePreview() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let fixture = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Tests")
+            .appendingPathComponent("fixtures/huge-solid.png")
+        let left = folder.appendingPathComponent("large-a.png")
+        let right = folder.appendingPathComponent("large-b.png")
+        try FileManager.default.copyItem(at: fixture, to: left)
+        try FileManager.default.copyItem(at: fixture, to: right)
+
+        let app = XCUIApplication()
+        app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
+        try launchWithFixtures([left, right], in: app)
+        XCTAssertTrue(app.radioButtons["Two Up"].waitForExistence(timeout: 10))
+        app.radioButtons["Difference"].click()
+        let preview = app.staticTexts.matching(NSPredicate(
+            format: "value BEGINSWITH %@", "Preview: 0 of "
+        )).firstMatch
+        XCTAssertTrue(preview.waitForExistence(timeout: 40))
+        XCTAssertTrue((preview.value as? String)?.hasSuffix("sampled pixels differ") == true)
+        app.radioButtons["Two Up"].click()
+        XCTAssertEqual((app.radioButtons["Two Up"].value as? NSNumber)?.intValue, 1)
+    }
+
     func testPerspectiveAlignmentCanBeReset() throws {
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")

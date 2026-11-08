@@ -480,12 +480,23 @@ local use, hosted CI, and release qualification.
   calls took 0.112, 0.108, and 0.117 seconds on this Mac; the process peaked
   at 14.5 MB resident memory including fixture creation. The weekly CI job
   now records the same probe. App-level Git interaction timing remains open.
+- Large image display geometry is now separate from the 25-million-pixel
+  full-resolution difference limit. An 8192 × 8192 PNG pair can use the basic
+  image views; Difference builds a reduced-resolution ImageIO preview and
+  labels its count as sampled pixels, not an exact source-resolution count.
+  The release-mode core test for an identical compressed pair returned zero
+  changed sampled pixels in 1.2 seconds on this Mac. Full-resolution large
+  differences, pixel inspection, and alignment remain open. A native UI case
+  for the preview is prepared but has not yet passed hosted CI. The signed
+  Release app installed in `~/Applications` showed the two 8192² sources in
+  Two Up and a Difference preview of 0 of 19,998,784 sampled pixels. The
+  disposable tab was closed; the earlier installed app is kept in a guarded
+  backup.
 
 ## Next verification and implementation
 
 1. Finish the extensions' provider-delivery and other-host failure checks,
-   release-mode large-image
-   performance checks, and remaining CLI failure workflows.
+   app-level large-image performance checks, and remaining CLI failure workflows.
 2. Complete the remaining text, image, folder, Git, workspace, and integration
    outcomes in the capability checklist; test keyboard and failure paths.
 3. Repeat the update failure and rollback checks on final packaging, finish

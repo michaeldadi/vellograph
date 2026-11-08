@@ -11,7 +11,7 @@ public enum PixelDifferenceError: Error, LocalizedError, Equatable {
     public var errorDescription: String? {
         switch self {
         case .unreadableImage: "The image could not be decoded."
-        case .imageTooLarge: "This image pair exceeds the 25-million-pixel difference limit."
+        case .imageTooLarge: "This image is too large for a safe pixel comparison."
         case .renderingFailed: "The image difference could not be rendered."
         case .alignmentFailed: "These images could not be aligned by their content. Try a manual offset."
         }
@@ -47,6 +47,9 @@ public struct PixelDifferenceMask: Sendable {
     public let rgba: Data
     public let changedPixelCount: Int
     public let totalPixelCount: Int
+    /// True when ImageIO reduced the sources before comparison. Counts then
+    /// describe sampled pixels, not exact full-resolution source pixels.
+    public let isPreview: Bool
 }
 
 public struct PixelSample: Sendable, Equatable {
@@ -103,6 +106,32 @@ public struct PixelBuffer: Sendable {
             throw PixelDifferenceError.unreadableImage
         }
         return try load(source)
+    }
+
+    fileprivate static func loadThumbnail(_ url: URL, maxPixelSize: Int) throws -> PixelBuffer {
+        try Task<Never, Never>.checkCancellation()
+        guard maxPixelSize > 0,
+              let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
+                kCGImageSourceShouldCacheImmediately: false,
+              ] as CFDictionary),
+              image.width > 0, image.height > 0,
+              image.width <= 25_000_000 / image.height else {
+            throw PixelDifferenceError.unreadableImage
+        }
+        let profile = properties[kCGImagePropertyProfileName] as? String
+            ?? properties[kCGImagePropertyNamedColorSpace] as? String
+            ?? "Unspecified"
+        let model = properties[kCGImagePropertyColorModel] as? String ?? "Unknown"
+        let depth = (properties[kCGImagePropertyDepth] as? NSNumber)?.intValue ?? image.bitsPerComponent
+        return PixelBuffer(width: image.width, height: image.height,
+                           colorInformation: ImageColorInformation(
+                            sourceModel: model, sourceProfile: profile, sourceDepth: depth),
+                           rgba: try PixelDifference.bitmap(image, width: image.width,
+                                                            height: image.height))
     }
 
     private static func load(_ source: CGImageSource) throws -> PixelBuffer {
@@ -174,6 +203,32 @@ public enum PixelDifference {
         translation: ImageTranslation = .init()
     ) throws -> PixelDifferenceMask {
         try Task<Never, Never>.checkCancellation()
+        let leftSize = try ImageSize.load(left)
+        let rightSize = try ImageSize.load(right)
+        // ImageIO may decode more than the requested thumbnail internally.
+        // Bound hostile compressed headers before asking it to downsample.
+        guard leftSize.width <= 100_000_000 / leftSize.height,
+              rightSize.width <= 100_000_000 / rightSize.height else {
+            throw PixelDifferenceError.imageTooLarge
+        }
+        let fullCanvas = try ImageCanvas(leftWidth: leftSize.width, leftHeight: leftSize.height,
+                                         rightWidth: rightSize.width, rightHeight: rightSize.height,
+                                         translation: translation)
+        if fullCanvas.width > 25_000_000 / fullCanvas.height {
+            // ImageIO creates bounded thumbnails before our RGBA allocations.
+            // Leave headroom for rounding and an alignment offset.
+            let scale = min(1, sqrt(20_000_000 / (Double(fullCanvas.width) * Double(fullCanvas.height))))
+            let leftLimit = max(1, Int((Double(max(leftSize.width, leftSize.height)) * scale).rounded(.down)))
+            let rightLimit = max(1, Int((Double(max(rightSize.width, rightSize.height)) * scale).rounded(.down)))
+            let a = try PixelBuffer.loadThumbnail(left, maxPixelSize: leftLimit)
+            let b = try PixelBuffer.loadThumbnail(right, maxPixelSize: rightLimit)
+            let reducedTranslation = ImageTranslation(
+                x: Int((Double(translation.x) * scale).rounded()),
+                y: Int((Double(translation.y) * scale).rounded()))
+            return try compare(a, b, mode: mode, threshold: threshold,
+                               maskColor: maskColor, translation: reducedTranslation,
+                               isPreview: true)
+        }
         let a = try PixelBuffer.load(left)
         let b = try PixelBuffer.load(right)
         return try compare(a, b, mode: mode, threshold: threshold,
@@ -195,13 +250,17 @@ public enum PixelDifference {
     private static func compare(
         _ a: PixelBuffer, _ b: PixelBuffer,
         mode: PixelDifferenceMode, threshold: Double,
-        maskColor: PixelMaskColor, translation: ImageTranslation
+        maskColor: PixelMaskColor, translation: ImageTranslation,
+        isPreview: Bool = false
     ) throws -> PixelDifferenceMask {
         let canvas = try ImageCanvas(leftWidth: a.width, leftHeight: a.height,
                                      rightWidth: b.width, rightHeight: b.height,
                                      translation: translation)
         let width = canvas.width
         let height = canvas.height
+        guard width <= 25_000_000 / height else {
+            throw PixelDifferenceError.imageTooLarge
+        }
         let limit = UInt8((min(1, max(0, threshold)) * 255).rounded())
         var mask = Data(count: width * height * 4)
         var changed = 0
@@ -252,7 +311,8 @@ public enum PixelDifference {
         return PixelDifferenceMask(width: width, height: height, canvas: canvas,
                                    sameDimensions: a.width == b.width && a.height == b.height,
                                    rgba: mask,
-                                   changedPixelCount: changed, totalPixelCount: width * height)
+                                   changedPixelCount: changed, totalPixelCount: width * height,
+                                   isPreview: isPreview)
     }
 
     fileprivate static func bitmap(_ image: CGImage, width: Int, height: Int) throws -> Data {

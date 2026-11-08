@@ -37,6 +37,7 @@ import UniformTypeIdentifiers
     #expect(result.width == 2)
     #expect(result.height == 1)
     #expect(result.sameDimensions)
+    #expect(!result.isPreview)
     #expect(result.changedPixelCount == 1)
     #expect(Array(result.rgba.prefix(4)) == [0, 0, 0, 0])
     #expect(result.rgba[7] > 0)
@@ -74,6 +75,18 @@ import UniformTypeIdentifiers
     }
     #expect(throws: PixelDifferenceError.imageTooLarge) {
         try ImageRegistration.perspectiveAligned(left: huge, right: huge)
+    }
+    let canvas = try ImageCanvas(leftWidth: size.width, leftHeight: size.height,
+                                 rightWidth: size.width, rightHeight: size.height)
+    #expect(canvas.width == 8192 && canvas.height == 8192)
+    let preview = try PixelDifference.compare(left: huge, right: huge)
+    #expect(preview.isPreview)
+    #expect(preview.width < size.width && preview.height < size.height)
+    #expect(preview.totalPixelCount <= 25_000_000)
+    #expect(preview.changedPixelCount == 0)
+    #expect(throws: PixelDifferenceError.imageTooLarge) {
+        try ImageCanvas(leftWidth: 100_000, leftHeight: 100_000,
+                        rightWidth: 100_000, rightHeight: 100_000)
     }
 }
 
