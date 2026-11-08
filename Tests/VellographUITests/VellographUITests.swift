@@ -403,6 +403,55 @@ import XCTest
         XCTAssertEqual(try String(contentsOf: left, encoding: .utf8), "same\n")
     }
 
+    func testTwoWayResolutionKeyboardUndoAndSafeSave() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let left = folder.appendingPathComponent("a.txt")
+        let right = folder.appendingPathComponent("b.txt")
+        let leftText = "first A\nshared one\nshared two\nsecond A\n"
+        let rightText = "first B\nshared one\nshared two\nsecond B\n"
+        try Data(leftText.utf8).write(to: left)
+        try Data(rightText.utf8).write(to: right)
+
+        let app = XCUIApplication()
+        app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
+        try launchWithFixtures([left, right], in: app)
+        XCTAssertTrue(app.staticTexts["2 changes"].waitForExistence(timeout: 10))
+        app.buttons["Resolve…"].click()
+        let build = app.buttons["Build Output"]
+        XCTAssertTrue(build.waitForExistence(timeout: 5))
+        XCTAssertFalse(build.isEnabled)
+        XCTAssertTrue(app.buttons["Use B for next unresolved change"].exists)
+        app.typeKey("2", modifierFlags: [.command])
+        XCTAssertTrue(app.staticTexts["1 of 2 chosen"].waitForExistence(timeout: 5))
+        app.typeKey("4", modifierFlags: [.command])
+        XCTAssertTrue(app.staticTexts["2 of 2 chosen"].waitForExistence(timeout: 5))
+        app.typeKey("z", modifierFlags: [.command])
+        XCTAssertTrue(app.staticTexts["1 of 2 chosen"].waitForExistence(timeout: 5))
+        app.typeKey("1", modifierFlags: [.command])
+        XCTAssertTrue(build.isEnabled)
+        app.typeKey(XCUIKeyboardKey.return.rawValue, modifierFlags: [.command, .shift])
+        let output = app.textViews["Resolved text output"]
+        XCTAssertTrue(output.waitForExistence(timeout: 5))
+        XCTAssertEqual(output.value as? String,
+                       "first B\nshared one\nshared two\nsecond A\n")
+
+        app.typeKey("s", modifierFlags: [.command])
+        let saveDialog = app.dialogs.firstMatch
+        XCTAssertTrue(saveDialog.waitForExistence(timeout: 5))
+        saveDialog.buttons["Save"].click()
+        let saved = folder.appendingPathComponent("b.txt.resolved")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(
+            format: "label CONTAINS %@", saved.path
+        )).firstMatch.waitForExistence(timeout: 10))
+        XCTAssertEqual(try String(contentsOf: saved, encoding: .utf8),
+                       "first B\nshared one\nshared two\nsecond A\n")
+        XCTAssertEqual(try String(contentsOf: left, encoding: .utf8), leftText)
+        XCTAssertEqual(try String(contentsOf: right, encoding: .utf8), rightText)
+    }
+
     func testTextLayoutsWhitespaceAndMissingSourceRefresh() throws {
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")

@@ -39,6 +39,29 @@ struct TextResolutionView: View {
                 .keyboardShortcut("z", modifiers: [.command])
                 Spacer()
             }
+            if output == nil && !comparison.diff.hunks.isEmpty {
+                HStack {
+                    Text("Next change: \((nextUnresolvedHunkID ?? 0) + 1)")
+                        .foregroundStyle(.secondary)
+                    Button("A") { chooseNext(.left) }
+                        .keyboardShortcut("1", modifiers: [.command])
+                        .accessibilityLabel("Use A for next unresolved change")
+                    Button("B") { chooseNext(.right) }
+                        .keyboardShortcut("2", modifiers: [.command])
+                        .accessibilityLabel("Use B for next unresolved change")
+                    Button("Both") { chooseNext(.both) }
+                        .keyboardShortcut("3", modifiers: [.command])
+                        .accessibilityLabel("Use Both for next unresolved change")
+                    Button("Neither") { chooseNext(.neither) }
+                        .keyboardShortcut("4", modifiers: [.command])
+                        .accessibilityLabel("Use Neither for next unresolved change")
+                    Spacer()
+                    Text("⌘1–4 · ⌘⇧↩ Build")
+                        .foregroundStyle(.secondary)
+                }
+                .font(.caption)
+                .disabled(nextUnresolvedHunkID == nil)
+            }
             List(comparison.diff.hunks) { hunk in
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Change \(hunk.id + 1) · A lines \(rangeName(hunk.oldRange)) · B lines \(rangeName(hunk.newRange))")
@@ -97,10 +120,12 @@ struct TextResolutionView: View {
                     Button("Build Output") { buildOutput() }
                         .buttonStyle(.borderedProminent)
                         .disabled(choices.count != comparison.diff.hunks.count)
+                        .keyboardShortcut(.return, modifiers: [.command, .shift])
                 } else {
                     Button("Change Choices…") { confirmDiscard = true }
                     Button("Save As…") { saveAs() }
                         .buttonStyle(.borderedProminent)
+                        .keyboardShortcut("s", modifiers: [.command])
                     if canReplaceSources {
                         Menu("Replace Source…") {
                             Button("Replace A") { replaceSource(at: 0) }
@@ -153,6 +178,16 @@ struct TextResolutionView: View {
         choices = Dictionary(uniqueKeysWithValues: comparison.diff.hunks.map { ($0.id, choice) })
     }
 
+    private var nextUnresolvedHunkID: Int? {
+        comparison.diff.hunks.first(where: { choices[$0.id] == nil })?.id
+    }
+
+    private func chooseNext(_ choice: TextChangeChoice) {
+        guard output == nil, let id = nextUnresolvedHunkID else { return }
+        choiceHistory.append(choices)
+        choices[id] = choice
+    }
+
     private func buildOutput() {
         do {
             output = try TextResolution.resolve(
@@ -174,6 +209,7 @@ struct TextResolutionView: View {
     private func saveAs() {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = (comparison.sources.last?.lastPathComponent ?? "comparison") + ".resolved"
+        panel.directoryURL = comparison.sources.last?.deletingLastPathComponent()
         guard panel.runModal() == .OK, let url = panel.url else { return }
         if comparison.sources.contains(where: { $0.standardizedFileURL == url.standardizedFileURL }) {
             errorMessage = "Use Replace Source to update A or B with a recovery copy."
