@@ -1,0 +1,12 @@
+.build/
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+*.app
+*.dmg
+*.zip
+*.xcarchive
+*.dSYM
+
