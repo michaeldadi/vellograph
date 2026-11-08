@@ -589,8 +589,7 @@ local use, hosted CI, and release qualification.
   limited to planned mutations, avoiding extra metadata calls for equal items
   in large folders. Cancellation before a staged copy leaves the destination
   untouched, and a forced interruption after one replacement restores both
-  destination files. Cancellation during
-  the underlying `fcopyfile` call remains unmeasured. Hosted runs
+  destination files. Hosted runs
   `42519502311` at `4bacdd6` and `42519793803` at `0a02530` passed both jobs,
   including all 14 native UI cases. The signed Release app was installed with
   a guarded backup and restored its saved tabs. In its folder UI, a reviewed
@@ -606,13 +605,23 @@ local use, hosted CI, and release qualification.
   327–419 MiB to 19–20 MiB while plan/apply timings remained within
   0.037–0.052/0.145–0.191 seconds. The probe checks source, destination, and
   recovery bytes and now runs in weekly/manual macOS CI. These are core-process
-  results; installed-app peak memory and cancellation during `fcopyfile`
-  remain open.
+  results; installed-app peak memory remains open. Hosted run `42521374568`
+  passed both jobs at `5626e73`.
 - The exact-byte binary comparison now drains autoreleased read buffers on
   each 64 KiB block. Three release-probe runs compared two 64 MiB files in
   0.034–0.037 seconds and peaked at about 10 MiB process memory. The Word
   conversion pipe uses the same bounded-read pattern. Weekly/manual CI now
-  records the binary probe; installed-app memory remains unmeasured.
+  records the binary probe; installed-app memory remains unmeasured. Hosted
+  run `42521743540` passed both jobs at `eaf6af9`.
+- `fcopyfile` staging now receives Apple's per-write status callback and quits
+  when the current task is canceled. A deterministic local test canceled on
+  copy progress for an 8 MiB file: the destination retained its old bytes,
+  the source remained intact, and the staging directory was removed. The full
+  Swift suite and signed Release build passed. The 64 MiB release probe still
+  took 0.030 seconds to plan and 0.128 seconds to apply, with a 19 MiB process
+  peak in one run. Installed-app cancellation during a large copy remains to
+  be exercised. Hosted run `42522227664` passed both jobs at `9b362a0` for
+  the preceding Finder thumbnail change.
 
 ## Next verification and implementation
 

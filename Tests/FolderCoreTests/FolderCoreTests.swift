@@ -211,6 +211,35 @@ import Testing
     #expect(leftovers.isEmpty)
 }
 
+@Test func cancellationDuringFileCopyLeavesDestinationUntouched() async throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let sourceFile = source.appendingPathComponent("large.bin")
+    let destinationFile = destination.appendingPathComponent("large.bin")
+    try Data(repeating: 0x41, count: 8_388_608).write(to: sourceFile)
+    try Data("old".utf8).write(to: destinationFile)
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["large.bin"])
+    let result = await Task { () -> (Error?, Int) in
+        var progressCount = 0
+        do {
+            _ = try plan.apply(afterFinalTargetCheck: nil, afterCopyProgress: { action in
+                guard action.path == "large.bin" else { return }
+                progressCount += 1
+                withUnsafeCurrentTask { $0?.cancel() }
+            })
+            return (nil, progressCount)
+        } catch { return (error, progressCount) }
+    }.value
+    #expect(result.1 > 0)
+    #expect(result.0 is CancellationError)
+    #expect(try Data(contentsOf: destinationFile) == Data("old".utf8))
+    #expect(try Data(contentsOf: sourceFile) == Data(repeating: 0x41, count: 8_388_608))
+    let leftovers = try FileManager.default.contentsOfDirectory(atPath: root.path)
+        .filter { $0.hasPrefix(".vellograph-stage-") }
+    #expect(leftovers.isEmpty)
+}
+
 @Test func cancellationAfterFirstReplacementRestoresBothFiles() throws {
     let (root, source, destination) = try folders()
     defer { try? FileManager.default.removeItem(at: root) }

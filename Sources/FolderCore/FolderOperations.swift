@@ -229,7 +229,8 @@ public struct FolderOperationPlan: Sendable {
     // the final fingerprint and the filesystem move.
     func apply(afterFinalTargetCheck: ((FolderAction) throws -> Void)?,
                afterDestinationOpen: ((FolderAction) throws -> Void)? = nil,
-               afterSourcePreflight: ((FolderAction) throws -> Void)? = nil) throws -> FolderApplyResult {
+               afterSourcePreflight: ((FolderAction) throws -> Void)? = nil,
+               afterCopyProgress: ((FolderAction) -> Void)? = nil) throws -> FolderApplyResult {
         try preflight()
         guard !actions.isEmpty else { return FolderApplyResult(appliedCount: 0, recoveryFolder: nil) }
         let fm = FileManager.default
@@ -264,7 +265,8 @@ public struct FolderOperationPlan: Sendable {
             let (sourceParent, sourceName) = try Self.sourceParent(in: sourceHandle, for: action.path)
             let (stageParent, stageName) = try stageHandle.parent(for: action.path, creating: true)
             try sourceParent.copy(sourceName, to: stageParent, as: stageName,
-                                  kind: action.itemKind, expectedIdentity: action.sourceIdentity)
+                                  kind: action.itemKind, expectedIdentity: action.sourceIdentity,
+                                  onProgress: afterCopyProgress.map { progress in { progress(action) } })
             guard try stageParent.fingerprint(stageName) == action.sourceFingerprint else {
                 throw FolderOperationError.stalePreview(action.path)
             }
@@ -619,6 +621,22 @@ public struct FolderOperationPlan: Sendable {
 }
 
 private final class FolderDirectoryHandle {
+    private final class CopyProgressContext {
+        let onProgress: (() -> Void)?
+
+        init(onProgress: (() -> Void)?) { self.onProgress = onProgress }
+    }
+
+    private static let copyStatusCallback: copyfile_callback_t = { what, stage, _, _, _, opaque in
+        guard what == COPYFILE_COPY_DATA, stage == COPYFILE_PROGRESS else {
+            return COPYFILE_CONTINUE
+        }
+        if let opaque {
+            Unmanaged<CopyProgressContext>.fromOpaque(opaque).takeUnretainedValue().onProgress?()
+        }
+        return Task<Never, Never>.isCancelled ? COPYFILE_QUIT : COPYFILE_CONTINUE
+    }
+
     let fd: Int32
 
     init(url: URL) throws {
@@ -721,7 +739,8 @@ private final class FolderDirectoryHandle {
 
     func copy(_ name: String, to destination: FolderDirectoryHandle,
               as destinationName: String, kind: FolderItemKind,
-              expectedIdentity: FolderEntryIdentity?) throws {
+              expectedIdentity: FolderEntryIdentity?,
+              onProgress: (() -> Void)? = nil) throws {
         switch kind {
         case .file:
             let sourceFD = openat(fd, name, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
@@ -738,7 +757,26 @@ private final class FolderDirectoryHandle {
                                        O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
             guard destinationFD >= 0 else { throw Self.systemError() }
             defer { Darwin.close(destinationFD) }
-            guard fcopyfile(sourceFD, destinationFD, nil, copyfile_flags_t(COPYFILE_ALL)) == 0 else {
+            guard let copyState = copyfile_state_alloc() else { throw POSIXError(.ENOMEM) }
+            defer { copyfile_state_free(copyState) }
+            let context = CopyProgressContext(onProgress: onProgress)
+            // STATUS_CB takes the function address, not the address of a
+            // Swift variable holding the function pointer.
+            let callbackSet = copyfile_state_set(
+                copyState, UInt32(COPYFILE_STATE_STATUS_CB),
+                unsafeBitCast(Self.copyStatusCallback, to: UnsafeRawPointer.self))
+            guard callbackSet == 0,
+                  copyfile_state_set(copyState, UInt32(COPYFILE_STATE_STATUS_CTX),
+                                     Unmanaged.passUnretained(context).toOpaque()) == 0 else {
+                throw Self.systemError()
+            }
+            let copyResult = withExtendedLifetime(context) {
+                fcopyfile(sourceFD, destinationFD, copyState, copyfile_flags_t(COPYFILE_ALL))
+            }
+            guard copyResult == 0 else {
+                if errno == ECANCELED || Task<Never, Never>.isCancelled {
+                    throw CancellationError()
+                }
                 throw Self.systemError()
             }
         case .symbolicLink:
