@@ -122,10 +122,14 @@ public enum FolderComparison {
         defer { try? a.close(); try? b.close() }
         while true {
             try Task<Never, Never>.checkCancellation()
-            let aBytes = try a.read(upToCount: 1_048_576) ?? Data()
-            let bBytes = try b.read(upToCount: 1_048_576) ?? Data()
-            if aBytes != bBytes { return false }
-            if aBytes.isEmpty { return true }
+            let outcome = try autoreleasepool { () throws -> Bool? in
+                let aBytes = try a.read(upToCount: 1_048_576) ?? Data()
+                let bBytes = try b.read(upToCount: 1_048_576) ?? Data()
+                if aBytes != bBytes { return false }
+                if aBytes.isEmpty { return true }
+                return nil
+            }
+            if let outcome { return outcome }
         }
     }
 }

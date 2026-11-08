@@ -604,10 +604,14 @@ public struct FolderOperationPlan: Sendable {
             let file = try FileHandle(forReadingFrom: entry.url)
             defer { try? file.close() }
             var hasher = SHA256()
-            while let bytes = try file.read(upToCount: 1_048_576), !bytes.isEmpty {
+            while try autoreleasepool(invoking: { () throws -> Bool in
                 try Task<Never, Never>.checkCancellation()
+                guard let bytes = try file.read(upToCount: 1_048_576), !bytes.isEmpty else {
+                    return false
+                }
                 hasher.update(data: bytes)
-            }
+                return true
+            }) {}
             return FolderFingerprint(kind: .file, digest: Array(hasher.finalize()))
         case .other: return FolderFingerprint(kind: .other, digest: nil)
         }
@@ -692,10 +696,14 @@ private final class FolderDirectoryHandle {
                 throw FolderOperationError.stalePreview(name)
             }
             var hasher = SHA256()
-            while let chunk = try file.read(upToCount: 1_048_576), !chunk.isEmpty {
+            while try autoreleasepool(invoking: { () throws -> Bool in
                 try Task<Never, Never>.checkCancellation()
+                guard let chunk = try file.read(upToCount: 1_048_576), !chunk.isEmpty else {
+                    return false
+                }
                 hasher.update(data: chunk)
-            }
+                return true
+            }) {}
             return FolderFingerprint(kind: .file, digest: Array(hasher.finalize()))
         default:
             return FolderFingerprint(kind: .other, digest: nil)

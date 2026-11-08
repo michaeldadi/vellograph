@@ -11,6 +11,7 @@ Build the release-mode probe and run the two workloads separately:
 swift build -c release --product vellograph-bench
 /usr/bin/time -l .build/release/vellograph-bench
 /usr/bin/time -l .build/release/vellograph-bench --folder100k
+/usr/bin/time -l .build/release/vellograph-bench --folder-copy
 /usr/bin/time -l .build/release/vellograph-bench --git-busy
 mkdir -p .build/ui-fixtures
 sips -z 4096 4096 Artwork/VellographIcon-master.png \
@@ -36,6 +37,7 @@ sips -s format jpeg Tests/fixtures/huge-solid.png \
 | 16,384-line, 0.91 MiB text pair; one changed line | Parse 0.033 s; diff 0.033 s; display rows <0.001 s | 170 MB for the process running both text cases |
 | 163,840-line, 9.27 MiB text pair; one changed line | Parse 0.241 s; diff 0.345 s; display rows 0.002 s | Same process as above |
 | One 100,000-entry folder against an empty folder | Compare 0.513–0.632 s on two later runs | 136–143 MB including fixture creation and cleanup |
+| Reviewed replacement of a 64 MiB file, three runs | Plan 0.037–0.052 s; apply 0.145–0.191 s | 19–20 MiB including fixture creation and exact readback |
 | Git worktree with 5,000 tracked files and 1,125 changed paths | Repository open 0.346 s; repeated status 0.112 / 0.108 / 0.117 s | 14.5 MB including fixture creation and cleanup |
 | 4096 × 4096 PNG pair; 12,621,444 changed pixels | Decode and pixel difference 0.421 s | 287 MB for the process |
 | 5000 × 5000 PNG pair; 18,805,938 changed pixels | Decode and pixel difference 0.861 s | 420 MB for the process |
@@ -48,6 +50,17 @@ timed as core work. An earlier run measured 1.071 seconds and 81 MB peak.
 These are isolated runs, not controlled distributions. Re-run on the target
 build before using them as regression gates. App-level first-viewport,
 scrolling, large-image, and busy Git worktree measurements remain open.
+
+The 64 MiB copy probe writes its fixture outside the timed intervals, then
+plans and applies a reviewed replacement. It verifies that source and
+destination content match and that recovery holds the old destination bytes.
+Before bounding Foundation's autoreleased read buffers, three runs peaked at
+327–419 MiB; with an autorelease pool per read chunk, three runs peaked at
+19–20 MiB. `getrusage` showed the new process peak rising from about 9 MiB
+after fixture creation to 15–16 MiB after planning, 17 MiB after applying,
+and 19 MiB after verification. These measurements include process memory,
+not the installed app's memory. The weekly CI probe records the same workload
+without enforcing a threshold yet.
 
 The Git fixture includes staged, unstaged, partially staged, deleted, and
 untracked paths. Its 3.42-second process lifetime includes creating a fresh

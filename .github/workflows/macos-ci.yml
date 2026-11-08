@@ -77,6 +77,7 @@ jobs:
           swift build -c release --product vellograph-bench --jobs 3
           /usr/bin/time -l .build/release/vellograph-bench
           /usr/bin/time -l .build/release/vellograph-bench --folder100k
+          /usr/bin/time -l .build/release/vellograph-bench --folder-copy
           /usr/bin/time -l .build/release/vellograph-bench --git-busy
           mkdir -p "$RUNNER_TEMP/vellograph-image-fixtures"
           sips -z 4096 4096 Artwork/VellographIcon-master.png \

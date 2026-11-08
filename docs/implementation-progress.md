@@ -591,6 +591,14 @@ local use, hosted CI, and release qualification.
   showed zero differences. The disposable tab and fixture were removed. The
   native folder copy/clone test now checks source preservation and executable
   mode; its focused local run passed 1/1. Hosted verification is pending.
+- The 64 MiB reviewed folder replacement probe found autoreleased read buffers
+  accumulating during fingerprints and equality checks. Wrapping each read
+  chunk in an autorelease pool reduced three-run peak process memory from
+  327–419 MiB to 19–20 MiB while plan/apply timings remained within
+  0.037–0.052/0.145–0.191 seconds. The probe checks source, destination, and
+  recovery bytes and now runs in weekly/manual macOS CI. These are core-process
+  results; installed-app peak memory and cancellation during `fcopyfile`
+  remain open.
 
 ## Next verification and implementation
 

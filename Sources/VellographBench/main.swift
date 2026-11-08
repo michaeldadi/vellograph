@@ -1,4 +1,5 @@
 import DiffCore
+import Darwin
 import FolderCore
 import Foundation
 import GitCore
@@ -42,6 +43,12 @@ private func seconds(_ duration: Duration) -> Double {
     return Double(parts.seconds) + Double(parts.attoseconds) / 1_000_000_000_000_000_000
 }
 
+private func peakResidentMiB() -> Double {
+    var usage = rusage()
+    guard getrusage(RUSAGE_SELF, &usage) == 0 else { return .nan }
+    return Double(usage.ru_maxrss) / 1_048_576
+}
+
 private func folderProbe() throws {
     let root = FileManager.default.temporaryDirectory
         .appendingPathComponent("vellograph-bench-\(UUID().uuidString)", isDirectory: true)
@@ -70,6 +77,49 @@ private func folderProbe() throws {
     }
     print(String(format: "100,000-entry folder comparison | %.3f s | %d results",
                  seconds(elapsed), differences.count))
+}
+
+private func folderCopyProbe() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("vellograph-copy-bench-\(UUID().uuidString)", isDirectory: true)
+    let source = root.appendingPathComponent("source", isDirectory: true)
+    let destination = root.appendingPathComponent("destination", isDirectory: true)
+    let fm = FileManager.default
+    try fm.createDirectory(at: source, withIntermediateDirectories: true)
+    defer { try? fm.removeItem(at: root) }
+    try fm.createDirectory(at: destination, withIntermediateDirectories: false)
+    let sourceFile = source.appendingPathComponent("payload.bin")
+    let destinationFile = destination.appendingPathComponent("payload.bin")
+    guard fm.createFile(atPath: sourceFile.path, contents: nil),
+          fm.createFile(atPath: destinationFile.path, contents: Data("old".utf8)) else {
+        throw CocoaError(.fileWriteUnknown)
+    }
+    let writer = try FileHandle(forWritingTo: sourceFile)
+    let block = Data(repeating: 0x5A, count: 1_048_576)
+    for _ in 0..<64 { try writer.write(contentsOf: block) }
+    try writer.close()
+    let fixturePeak = peakResidentMiB()
+
+    let clock = ContinuousClock()
+    let planStart = clock.now
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["payload.bin"])
+    let planTime = planStart.duration(to: clock.now)
+    let planPeak = peakResidentMiB()
+    let applyStart = clock.now
+    let result = try plan.apply()
+    let applyTime = applyStart.duration(to: clock.now)
+    let applyPeak = peakResidentMiB()
+    guard result.appliedCount == 1,
+          try Data(contentsOf: result.recoveryFolder!
+            .appendingPathComponent("payload.bin")) == Data("old".utf8),
+          try FolderComparison.compare(left: source, right: destination)
+            .allSatisfy({ $0.state == .equal }) else {
+        fatalError("The folder copy did not preserve exact source and recovery content.")
+    }
+    print(String(format: "64 MiB reviewed folder replacement | plan %.3f s | apply %.3f s | peak MiB fixture %.0f / plan %.0f / apply %.0f / verified %.0f",
+                 seconds(planTime), seconds(applyTime), fixturePeak, planPeak,
+                 applyPeak, peakResidentMiB()))
 }
 
 private func imageProbe(left: URL, right: URL) throws {
@@ -180,10 +230,12 @@ do {
                        right: URL(fileURLWithPath: arguments[2]))
     } else if arguments == ["--folder100k"] {
         try folderProbe()
+    } else if arguments == ["--folder-copy"] {
+        try folderCopyProbe()
     } else if arguments == ["--git-busy"] {
         try gitProbe()
     } else if !arguments.isEmpty {
-        fputs("Usage: vellograph-bench [--folder100k | --git-busy | --image LEFT RIGHT]\n", stderr)
+        fputs("Usage: vellograph-bench [--folder100k | --folder-copy | --git-busy | --image LEFT RIGHT]\n", stderr)
         exit(2)
     } else {
         for size in [1, 10] { try textProbe(mebibytes: size) }
