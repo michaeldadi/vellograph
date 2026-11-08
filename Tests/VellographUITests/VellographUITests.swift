@@ -269,6 +269,55 @@ import XCTest
         XCTAssertFalse(resolve.isEnabled)
     }
 
+    func testGitHistoryRevisionsAndInvalidReference() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")
+        let repository = folder.appendingPathComponent("repository")
+        try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        try runGit(in: repository, ["init", "-q"])
+        let file = repository.appendingPathComponent("guide.txt")
+        try Data("first\n".utf8).write(to: file)
+        try runGit(in: repository, ["add", "--", "guide.txt"])
+        try runGit(in: repository, ["-c", "commit.gpgsign=false", "-c", "user.name=Test",
+                                    "-c", "user.email=test@example.invalid", "commit", "-qm", "baseline"])
+        try Data("second\n".utf8).write(to: file)
+        try runGit(in: repository, ["add", "--", "guide.txt"])
+        try runGit(in: repository, ["-c", "commit.gpgsign=false", "-c", "user.name=Test",
+                                    "-c", "user.email=test@example.invalid", "commit", "-qm", "change"])
+        try Data("working\n".utf8).write(to: file)
+
+        let app = XCUIApplication()
+        app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
+        try launchWithFixtures([repository], in: app)
+        XCTAssertTrue(app.staticTexts["1 of 1 changed items"].waitForExistence(timeout: 10))
+
+        app.radioButtons["History"].click()
+        let commit = app.buttons.matching(NSPredicate(
+            format: "label BEGINSWITH %@", "Commit change,"
+        )).firstMatch
+        XCTAssertTrue(commit.waitForExistence(timeout: 10))
+        commit.click()
+        XCTAssertTrue(app.staticTexts["1 changed files"].waitForExistence(timeout: 10))
+        app.buttons["File History"].click()
+        XCTAssertTrue(app.staticTexts["File History · guide.txt"].waitForExistence(timeout: 10))
+        app.buttons["Done"].click()
+
+        app.radioButtons["Compare Revisions"].click()
+        app.buttons["Compare Revisions"].click()
+        let changes = app.staticTexts.matching(NSPredicate(
+            format: "label BEGINSWITH %@", "1 of 1 changes ·"
+        )).firstMatch
+        XCTAssertTrue(changes.waitForExistence(timeout: 10))
+
+        let from = app.textFields["From revision"]
+        from.click()
+        app.typeKey("a", modifierFlags: .command)
+        app.typeText("does-not-exist")
+        app.buttons["Compare Revisions"].click()
+        XCTAssertTrue(app.staticTexts["Unable to Open"].waitForExistence(timeout: 10))
+    }
+
     private func launchWithFixtures(_ urls: [URL], in app: XCUIApplication,
                                     seedShelf: Bool = false) throws {
         let paths = urls.map(\.path)
