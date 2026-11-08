@@ -98,6 +98,11 @@ local use, hosted CI, and release qualification.
   chain changed after preview. Three disposable folder tests cover those
   cases; the package suite and signed app build pass. Fully race-free
   filesystem operations still require more work.
+  A final-check race test now changes a destination file immediately before
+  its backup move. The copy compares the recovered bytes with the preview and
+  restores that external edit without installing the source. This narrows the
+  replacement race; path-component swaps still require descriptor-based
+  operations.
   Other races and failure-injection work remain open.
 - FSEvents refreshes text, folder, and Git views; pause/resume was exercised
   with disposable files in the native app.

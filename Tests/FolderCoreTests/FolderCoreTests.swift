@@ -1,4 +1,4 @@
-import FolderCore
+@testable import FolderCore
 import Foundation
 import Testing
 
@@ -44,6 +44,26 @@ import Testing
     try Data("external edit".utf8).write(to: destinationFile)
     #expect(throws: FolderOperationError.self) { try plan.apply() }
     #expect(try String(contentsOf: destinationFile, encoding: .utf8) == "external edit")
+}
+
+@Test func destinationChangedAfterFinalCheckIsRestoredWithoutWritingSource() throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let sourceFile = source.appendingPathComponent("file.txt")
+    let destinationFile = destination.appendingPathComponent("file.txt")
+    try Data("source".utf8).write(to: sourceFile)
+    try Data("previewed".utf8).write(to: destinationFile)
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["file.txt"])
+    #expect(throws: FolderOperationError.stalePreview("file.txt")) {
+        try plan.apply(afterFinalTargetCheck: { action in
+            if action.path == "file.txt" {
+                try Data("external edit".utf8).write(to: destinationFile)
+            }
+        })
+    }
+    #expect(try String(contentsOf: destinationFile, encoding: .utf8) == "external edit")
+    #expect(try String(contentsOf: sourceFile, encoding: .utf8) == "source")
 }
 
 @Test func replacingDestinationRootInvalidatesIdenticalLookingPreview() throws {

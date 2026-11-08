@@ -2,7 +2,7 @@ import CryptoKit
 import Darwin
 import Foundation
 
-public enum FolderOperationError: Error, LocalizedError {
+public enum FolderOperationError: Error, LocalizedError, Equatable {
     case invalidRoots
     case noSelection
     case unsupportedItem(String)
@@ -193,6 +193,12 @@ public struct FolderOperationPlan: Sendable {
     }
 
     public func apply() throws -> FolderApplyResult {
+        try apply(afterFinalTargetCheck: nil)
+    }
+
+    // The hook lets tests exercise a change in the narrow interval between
+    // the final fingerprint and the filesystem move.
+    func apply(afterFinalTargetCheck: ((FolderAction) throws -> Void)?) throws -> FolderApplyResult {
         try preflight()
         guard !actions.isEmpty else { return FolderApplyResult(appliedCount: 0, recoveryFolder: nil) }
         let fm = FileManager.default
@@ -240,6 +246,7 @@ public struct FolderOperationPlan: Sendable {
                 guard try Self.fingerprintAt(target) == action.destinationFingerprint else {
                     throw FolderOperationError.stalePreview(action.path)
                 }
+                try afterFinalTargetCheck?(action)
                 if action.kind == .remove, action.itemKind == .directory {
                     // rmdir is atomic and fails if an excluded or newly arrived
                     // child exists. Moving the whole directory would silently
@@ -266,6 +273,9 @@ public struct FolderOperationPlan: Sendable {
                                        restoreDirectory: false,
                                        createdDirectory: action.kind == .createDirectory,
                                        restorePermissions: nil, installedFingerprint: nil))
+                if let backup, try Self.fingerprintAt(backup) != action.destinationFingerprint {
+                    throw FolderOperationError.stalePreview(action.path)
+                }
                 switch action.kind {
                 case .createDirectory:
                     try fm.createDirectory(at: target, withIntermediateDirectories: false)
