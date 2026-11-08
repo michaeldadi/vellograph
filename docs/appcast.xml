@@ -1,5 +1,6 @@
-<?xml version="1.0" standalone="yes"?>
-<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+<?xml version="1.0" standalone="yes"?><!-- sparkle-sign-warning:
+IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
+--><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>Mac Diff Studio</title>
         <item>
@@ -10,7 +11,10 @@
             <sparkle:minimumSystemVersion>27.0</sparkle:minimumSystemVersion>
             <description sparkle:format="plain-text"><![CDATA[Update proof: signed 0.1.1 archive for testing in-app delivery on macOS 27.2. The application is an early development build.
 ]]></description>
-            <enclosure url="https://github.com/michaeldadi/mac-diff-studio/releases/download/v0.1.1-update-proof/MacDiffStudio-0.1.1.zip" length="1246503" type="application/octet-stream" sparkle:edSignature="HHb+BGwRAOTjuQQVObrvJV3y4n4djLvQXP0OKt6SmiV0HCJWKAZr7LFD1IQcE5GG4p2rQrEcdF9w+vjYQC4lCg=="/>
+            <enclosure url="https://github.com/michaeldadi/mac-diff-studio/releases/download/v0.1.1-update-proof/MacDiffStudio-0.1.1.zip" length="1246503" type="application/octet-stream" sparkle:edSignature="HHb+BGwRAOTjuQQVObrvJV3y4n4djLvQXP0OKt6SmiV0HCJWKAZr7LFD1IQcE5GG4p2rQrEcdF9w+vjYQC4lCg=="></enclosure>
         </item>
     </channel>
-</rss>
+</rss><!-- sparkle-signatures:
+edSignature: HTdE/wCDESgU2JlZbD60btFHiAGm5SvcYsTx2lU2r64CN++wuB3jLUgYq05ne7WL3H+r9T5+vKL5biNWNvrgAw==
+length: 1281
+-->
