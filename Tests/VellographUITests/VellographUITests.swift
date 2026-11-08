@@ -368,6 +368,40 @@ import XCTest
         XCTAssertEqual(try String(contentsOf: hidden, encoding: .utf8), "hidden\n")
     }
 
+    func testTextLiveRefreshCanPauseAndResume() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let left = folder.appendingPathComponent("a.txt")
+        let right = folder.appendingPathComponent("b.txt")
+        try Data("same\n".utf8).write(to: left)
+        try Data("same\n".utf8).write(to: right)
+
+        let app = XCUIApplication()
+        app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
+        try launchWithFixtures([left, right], in: app)
+        XCTAssertTrue(app.staticTexts["0 changes"].waitForExistence(timeout: 10))
+
+        try Data("changed while watching\n".utf8).write(to: right, options: .atomic)
+        XCTAssertTrue(app.staticTexts["1 change"].waitForExistence(timeout: 10))
+        app.buttons["Pause Live Updates"].click()
+        XCTAssertTrue(app.buttons["Resume Live Updates"].exists)
+        try Data("same\n".utf8).write(to: right, options: .atomic)
+        Thread.sleep(forTimeInterval: 1.2)
+        XCTAssertTrue(app.staticTexts["1 change"].exists)
+
+        app.buttons["Resume Live Updates"].click()
+        XCTAssertTrue(app.staticTexts["0 changes"].waitForExistence(timeout: 10))
+        try Data("intermediate\n".utf8).write(to: right, options: .atomic)
+        try Data("final state\n".utf8).write(to: right, options: .atomic)
+        XCTAssertTrue(app.staticTexts["1 change"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(
+            format: "label CONTAINS %@", "final state"
+        )).firstMatch.waitForExistence(timeout: 10))
+        XCTAssertEqual(try String(contentsOf: left, encoding: .utf8), "same\n")
+    }
+
     func testTextLayoutsWhitespaceAndMissingSourceRefresh() throws {
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")

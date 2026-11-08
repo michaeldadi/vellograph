@@ -358,8 +358,13 @@ local use, hosted CI, and release qualification.
   non-waiting commands have a 30-second response timeout. IPC package tests
   covered missing, unsafe, and silent sockets. All Swift package tests, the
   signed Xcode build, bundle verification, and the seven invalid-command
-  checks passed after the change. A real installed-app transport failure has
-  not yet been exercised.
+  checks passed after the change. The installed bundled CLI was later exercised
+  against an unsafe regular file at the app's socket path and a private
+  same-user socket that accepted but never replied. Both valid `diff` requests
+  returned status 2 with an error and no stdout; the latter timed out as
+  intended. The pre-existing stale socket was restored after the disposable
+  fixtures, and the relaunched app published a connectable socket. The
+  interrupted-response and wrong-user cases remain open.
 - A later eight-case Xcode UI rerun was interrupted when macOS logged a user
   gesture that stopped Automation Mode during the image fixture. The resulting
   loss of accessibility authorization affected the remaining cases. The
@@ -407,6 +412,10 @@ local use, hosted CI, and release qualification.
   Local Swift package tests and a signed Xcode test build passed. The signed
   Debug app installed in `~/Applications` includes these changes; bundle and
   deep signature checks passed, and it launched afterward.
+- A twelfth native UI case is prepared for text FSEvents refresh, pause/resume,
+  and two rapid edits that should display the final file contents. The Swift
+  package suite and signed Xcode test build passed locally; hosted execution
+  is still required before recording the workflow as passed.
 
 ## Next verification and implementation
 
