@@ -306,7 +306,7 @@ import XCTest
         app.radioButtons["Compare Revisions"].click()
         app.buttons["Compare Revisions"].click()
         let changes = app.staticTexts.matching(NSPredicate(
-            format: "label BEGINSWITH %@", "1 of 1 changes ·"
+            format: "value BEGINSWITH %@", "1 of 1 changes"
         )).firstMatch
         XCTAssertTrue(changes.waitForExistence(timeout: 10))
 
