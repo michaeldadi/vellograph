@@ -108,19 +108,39 @@ public struct PixelBuffer: Sendable {
         return try load(source)
     }
 
-    fileprivate static func loadThumbnail(_ url: URL, maxPixelSize: Int) throws -> PixelBuffer {
+    fileprivate static func loadPreview(_ url: URL, subsampleFactor: Int) throws -> PixelBuffer {
         try Task<Never, Never>.checkCancellation()
-        guard maxPixelSize > 0,
-              let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                kCGImageSourceCreateThumbnailFromImageAlways: true,
-                kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
-                kCGImageSourceShouldCacheImmediately: false,
-              ] as CFDictionary),
-              image.width > 0, image.height > 0,
-              image.width <= 25_000_000 / image.height else {
+              let encodedWidth = properties[kCGImagePropertyPixelWidth] as? Int,
+              let encodedHeight = properties[kCGImagePropertyPixelHeight] as? Int,
+              encodedWidth > 0, encodedHeight > 0 else {
             throw PixelDifferenceError.unreadableImage
+        }
+        let maxPixelSize = max(1, (max(encodedWidth, encodedHeight) + subsampleFactor - 1) / subsampleFactor)
+        let subsampled = CGImageSourceCreateImageAtIndex(source, 0, [
+            kCGImageSourceSubsampleFactor: subsampleFactor,
+            kCGImageSourceShouldCacheImmediately: false,
+        ] as CFDictionary)
+        // ImageIO may ignore subsampling for an unsupported format. In that
+        // case request a bounded thumbnail and check its dimensions before
+        // allocating the RGBA buffer.
+        let image: CGImage
+        if let subsampled, subsampled.width <= maxPixelSize,
+           subsampled.height <= maxPixelSize {
+            image = subsampled
+        } else if let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
+            kCGImageSourceShouldCacheImmediately: false,
+        ] as CFDictionary) {
+            image = thumbnail
+        } else {
+            throw PixelDifferenceError.unreadableImage
+        }
+        guard image.width > 0, image.height > 0,
+              image.width <= 25_000_000 / image.height else {
+            throw PixelDifferenceError.imageTooLarge
         }
         let profile = properties[kCGImagePropertyProfileName] as? String
             ?? properties[kCGImagePropertyNamedColorSpace] as? String
@@ -215,16 +235,15 @@ public enum PixelDifference {
                                          rightWidth: rightSize.width, rightHeight: rightSize.height,
                                          translation: translation)
         if fullCanvas.width > 25_000_000 / fullCanvas.height {
-            // ImageIO creates bounded thumbnails before our RGBA allocations.
-            // Leave headroom for rounding and an alignment offset.
-            let scale = min(1, sqrt(20_000_000 / (Double(fullCanvas.width) * Double(fullCanvas.height))))
-            let leftLimit = max(1, Int((Double(max(leftSize.width, leftSize.height)) * scale).rounded(.down)))
-            let rightLimit = max(1, Int((Double(max(rightSize.width, rightSize.height)) * scale).rounded(.down)))
-            let a = try PixelBuffer.loadThumbnail(left, maxPixelSize: leftLimit)
-            let b = try PixelBuffer.loadThumbnail(right, maxPixelSize: rightLimit)
+            // A common power-of-two factor keeps both sources in the same
+            // coordinate space and lets ImageIO subsample before decoding.
+            let area = Double(fullCanvas.width) * Double(fullCanvas.height)
+            let factor = area / 4 <= 20_000_000 ? 2 : (area / 16 <= 20_000_000 ? 4 : 8)
+            let a = try PixelBuffer.loadPreview(left, subsampleFactor: factor)
+            let b = try PixelBuffer.loadPreview(right, subsampleFactor: factor)
             let reducedTranslation = ImageTranslation(
-                x: Int((Double(translation.x) * scale).rounded()),
-                y: Int((Double(translation.y) * scale).rounded()))
+                x: Int((Double(translation.x) / Double(factor)).rounded()),
+                y: Int((Double(translation.y) / Double(factor)).rounded()))
             return try compare(a, b, mode: mode, threshold: threshold,
                                maskColor: maskColor, translation: reducedTranslation,
                                isPreview: true)

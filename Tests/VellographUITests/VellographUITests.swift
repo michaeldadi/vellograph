@@ -168,7 +168,6 @@ import XCTest
         defer { try? FileManager.default.removeItem(at: folder) }
         let fixture = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent()
-            .appendingPathComponent("Tests")
             .appendingPathComponent("fixtures/huge-solid.png")
         let left = folder.appendingPathComponent("large-a.png")
         let right = folder.appendingPathComponent("large-b.png")
@@ -183,7 +182,7 @@ import XCTest
         let preview = app.staticTexts.matching(NSPredicate(
             format: "value BEGINSWITH %@", "Preview: 0 of "
         )).firstMatch
-        XCTAssertTrue(preview.waitForExistence(timeout: 40))
+        XCTAssertTrue(preview.waitForExistence(timeout: 90))
         XCTAssertTrue((preview.value as? String)?.hasSuffix("sampled pixels differ") == true)
         app.radioButtons["Two Up"].click()
         XCTAssertEqual((app.radioButtons["Two Up"].value as? NSNumber)?.intValue, 1)

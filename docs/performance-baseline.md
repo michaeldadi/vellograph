@@ -24,6 +24,10 @@ sips -r 90 .build/ui-fixtures/bench-icon-5000-a.png \
   --out .build/ui-fixtures/bench-icon-5000-b.png
 /usr/bin/time -l .build/release/vellograph-bench --image \
   .build/ui-fixtures/bench-icon-5000-a.png .build/ui-fixtures/bench-icon-5000-b.png
+sips -s format jpeg Tests/fixtures/huge-solid.png \
+  --out .build/ui-fixtures/huge-solid.jpg
+/usr/bin/time -l .build/release/vellograph-bench --image \
+  Tests/fixtures/huge-solid.png .build/ui-fixtures/huge-solid.jpg
 ```
 
 | Workload | Observed core time | Peak resident memory of process |
@@ -34,6 +38,7 @@ sips -r 90 .build/ui-fixtures/bench-icon-5000-a.png \
 | Git worktree with 5,000 tracked files and 1,125 changed paths | Repository open 0.346 s; repeated status 0.112 / 0.108 / 0.117 s | 14.5 MB including fixture creation and cleanup |
 | 4096 × 4096 PNG pair; 12,621,444 changed pixels | Decode and pixel difference 0.421 s | 287 MB for the process |
 | 5000 × 5000 PNG pair; 18,805,938 changed pixels | Decode and pixel difference 0.861 s | 420 MB for the process |
+| 8192 × 8192 PNG/JPEG pair, reduced to a 4096² sampled preview; 16,777,216 changed samples | Decode and preview difference 1.602 s | 165 MB for the process |
 
 The folder fixture has 100 directories and 99,900 empty files. Its total
 roughly 19–20-second process lifetime on the two later runs includes creating
@@ -56,11 +61,10 @@ difference mask, excluding the process startup measured by `/usr/bin/time`.
 The 287 MB figure is the process peak, including decoded inputs and mask. This does not
 measure SwiftUI drawing, scrolling, or the full app's memory use.
 
-An 8192 × 8192 pair was rejected by the current 25-million-pixel limit.
-After adding an encoded-header dimension check before full ImageIO decode,
-the release-mode probe against the 262 KB fixture at
-`Tests/fixtures/huge-solid.png` exited with the intended size error in 0.33
-seconds including process startup, with a 10.8 MB process peak. The 5000 ×
-5000 probe exercises the limit; larger image support needs a bounded-memory
-implementation before it can qualify. The 420 MB figure is a single
-release-mode process peak on this Mac, not an app-level memory result.
+Full-resolution pixel inspection and alignment still reject an 8192 × 8192
+source before decoding. The Difference view now uses ImageIO subsampling for
+large sources and explicitly labels its count as sampled pixels. The 8192²
+PNG/JPEG preview above finished in 2.20 seconds including process startup;
+the earlier ImageIO thumbnail version took 1.94 seconds but peaked at 715 MB.
+The 5000 × 5000 probe remains an exact full-resolution comparison. All memory
+figures are single release-mode process peaks, not app-level measurements.

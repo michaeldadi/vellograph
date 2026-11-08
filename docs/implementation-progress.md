@@ -474,7 +474,7 @@ local use, hosted CI, and release qualification.
   the full path in its tooltip. The corrected hosted run `42486536194` passed
   all 13 cases, including keyboard choices across two changes, undo, exact
   saved output, and unchanged inputs. Package tests and a signed local Xcode
-  test build also passed. The installed Release app predates this change.
+  test build also passed. The installed Release app now includes this change.
 - A release-mode Git probe now creates a disposable 5,000-file repository with
   1,125 changed paths. Repository open took 0.346 seconds and three status
   calls took 0.112, 0.108, and 0.117 seconds on this Mac; the process peaked
@@ -484,14 +484,16 @@ local use, hosted CI, and release qualification.
   full-resolution difference limit. An 8192 × 8192 PNG pair can use the basic
   image views; Difference builds a reduced-resolution ImageIO preview and
   labels its count as sampled pixels, not an exact source-resolution count.
-  The release-mode core test for an identical compressed pair returned zero
-  changed sampled pixels in 1.2 seconds on this Mac. Full-resolution large
-  differences, pixel inspection, and alignment remain open. A native UI case
-  for the preview is prepared but has not yet passed hosted CI. The signed
-  Release app installed in `~/Applications` showed the two 8192² sources in
-  Two Up and a Difference preview of 0 of 19,998,784 sampled pixels. The
-  disposable tab was closed; the earlier installed app is kept in a guarded
-  backup.
+  The first thumbnail implementation peaked at 715 MB in the release probe.
+  Switching to ImageIO subsampling cut that to 165 MB for a changed PNG/JPEG
+  pair while producing a 4096² preview in 1.602 seconds. The full Swift test
+  suite and signed Release build pass. In the installed app, Two Up showed the
+  two 8192² sources and Difference reported 0 of 16,777,216 sampled pixels
+  for an identical pair. The disposable tab was closed and the previous app
+  kept in a guarded backup. Full-resolution large differences, pixel
+  inspection, and alignment remain open. The first hosted 14-case native UI
+  run failed only because the new test's fixture path included `Tests/Tests`;
+  the path is corrected and awaiting a fresh hosted pass.
 
 ## Next verification and implementation
 

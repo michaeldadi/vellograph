@@ -81,7 +81,7 @@ import UniformTypeIdentifiers
     #expect(canvas.width == 8192 && canvas.height == 8192)
     let preview = try PixelDifference.compare(left: huge, right: huge)
     #expect(preview.isPreview)
-    #expect(preview.width < size.width && preview.height < size.height)
+    #expect(preview.width == 4096 && preview.height == 4096)
     #expect(preview.totalPixelCount <= 25_000_000)
     #expect(preview.changedPixelCount == 0)
     #expect(throws: PixelDifferenceError.imageTooLarge) {
