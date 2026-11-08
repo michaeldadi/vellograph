@@ -68,29 +68,34 @@ struct FolderComparisonView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text("\(entries.filter { $0.state != .equal }.count) differences")
-                    .font(.headline)
-                Spacer()
-                Picker("Direction", selection: $sourceIsLeft) {
-                    Text("A → B").tag(true)
-                    Text("B → A").tag(false)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("\(entries.filter { $0.state != .equal }.count) differences")
+                        .font(.headline)
+                    Spacer()
+                    Picker("Direction", selection: $sourceIsLeft) {
+                        Text("A → B").tag(true)
+                        Text("B → A").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 180)
+                    Button("Preview Copy Selected") { prepare(.copy) }
+                        .disabled(selectedPaths.isEmpty || isBusy)
+                    Button("Preview Clone") { prepare(.clone) }
+                        .disabled(isBusy)
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 180)
-                Button("Preview Copy Selected") { prepare(.copy) }
-                    .disabled(selectedPaths.isEmpty || isBusy)
-                Button("Preview Clone") { prepare(.clone) }
-                    .disabled(isBusy)
-                Button("Refresh", systemImage: "arrow.clockwise") { refresh() }
-                    .disabled(isBusy)
-                Button(liveUpdatesPaused ? "Resume Live Updates" : "Pause Live Updates",
-                       systemImage: liveUpdatesPaused ? "play.fill" : "pause.fill") {
-                    liveUpdatesPaused.toggle()
-                    if !liveUpdatesPaused { refresh() }
+                HStack {
+                    Button("Refresh", systemImage: "arrow.clockwise") { refresh() }
+                        .disabled(isBusy)
+                    Button(liveUpdatesPaused ? "Resume Live Updates" : "Pause Live Updates",
+                           systemImage: liveUpdatesPaused ? "play.fill" : "pause.fill") {
+                        liveUpdatesPaused.toggle()
+                        if !liveUpdatesPaused { refresh() }
+                    }
+                    Toggle("Show Equal", isOn: $showEqual).toggleStyle(.checkbox)
+                    Spacer()
+                    TextField("Filter paths", text: $query).frame(width: 220)
                 }
-                Toggle("Show Equal", isOn: $showEqual).toggleStyle(.checkbox)
-                TextField("Filter paths", text: $query).frame(width: 220)
             }.padding(12)
             HStack {
                 Text("Copy keeps destination-only items. Clone mirrors the scanned scope after review; path and state filters do not narrow the clone.")

@@ -318,6 +318,56 @@ import XCTest
         XCTAssertTrue(app.staticTexts["Unable to Open"].waitForExistence(timeout: 10))
     }
 
+    func testFolderPreviewCopyAndStaleClonePreserveDestination() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")
+        let left = folder.appendingPathComponent("left")
+        let right = folder.appendingPathComponent("right")
+        try FileManager.default.createDirectory(at: left, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: right, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let source = left.appendingPathComponent("changed.txt")
+        let destination = right.appendingPathComponent("changed.txt")
+        let destinationOnly = right.appendingPathComponent("only-right.txt")
+        let hidden = right.appendingPathComponent(".keep-hidden")
+        try Data("new\n".utf8).write(to: source)
+        try Data("old\n".utf8).write(to: destination)
+        try Data("original\n".utf8).write(to: destinationOnly)
+        try Data("hidden\n".utf8).write(to: hidden)
+
+        let app = XCUIApplication()
+        app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
+        try launchWithFixtures([left, right], in: app)
+        XCTAssertTrue(app.staticTexts["2 differences"].waitForExistence(timeout: 10))
+        let window = app.windows.firstMatch
+        XCTAssertLessThanOrEqual(app.buttons["Preview Clone"].frame.maxX, window.frame.maxX - 8)
+        XCTAssertLessThanOrEqual(app.textFields["Filter paths"].frame.maxX, window.frame.maxX - 8)
+        XCTAssertLessThanOrEqual(app.buttons["Clear Selection"].frame.maxX, window.frame.maxX - 8)
+        XCTAssertLessThanOrEqual(app.textFields["Ignore path regex (one per line)"].frame.maxX,
+                                 window.frame.maxX - 8)
+        app.buttons["Pause Live Updates"].click()
+        app.buttons["Select Visible Differences"].click()
+        app.buttons["Preview Copy Selected"].click()
+        XCTAssertTrue(app.staticTexts["Review Copy Selected"].waitForExistence(timeout: 10))
+        app.buttons["Cancel"].click()
+        XCTAssertEqual(try String(contentsOf: destination, encoding: .utf8), "old\n")
+
+        app.buttons["Preview Copy Selected"].click()
+        XCTAssertTrue(app.staticTexts["Review Copy Selected"].waitForExistence(timeout: 10))
+        app.buttons["Apply Reviewed Changes"].click()
+        XCTAssertTrue(app.staticTexts["1 differences"].waitForExistence(timeout: 10))
+        XCTAssertEqual(try String(contentsOf: destination, encoding: .utf8), "new\n")
+        XCTAssertEqual(try String(contentsOf: destinationOnly, encoding: .utf8), "original\n")
+
+        app.buttons["Preview Clone"].click()
+        XCTAssertTrue(app.staticTexts["Review Clone Visible Scope"].waitForExistence(timeout: 10))
+        try Data("external edit\n".utf8).write(to: destinationOnly)
+        app.buttons["Apply Reviewed Changes"].click()
+        XCTAssertTrue(app.staticTexts["Folder Operation Failed"].waitForExistence(timeout: 10))
+        XCTAssertEqual(try String(contentsOf: destinationOnly, encoding: .utf8), "external edit\n")
+        XCTAssertEqual(try String(contentsOf: hidden, encoding: .utf8), "hidden\n")
+    }
+
     private func launchWithFixtures(_ urls: [URL], in app: XCUIApplication,
                                     seedShelf: Bool = false) throws {
         let paths = urls.map(\.path)

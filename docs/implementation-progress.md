@@ -372,6 +372,18 @@ local use, hosted CI, and release qualification.
   CLI, Action extension, and Share extension, plus deep code-signature
   verification. It uses an Apple Development identity. No valid Developer ID
   Application identity is installed, so this is not a notarized public build.
+- A ninth hosted native UI case opened a disposable repository, showed its
+  working-copy change, selected a commit and file history, compared `HEAD~1`
+  with `HEAD`, and checked the invalid-revision alert. The first assertion
+  queried the revision summary's accessibility label even though macOS exposed
+  its value; the result bundle showed one change on screen. The corrected
+  nine-case `native-ui` job and the parallel build-and-test job passed at
+  commit `121b229`.
+- Folder controls now occupy two rows at the 900-point minimum window width.
+  A new native case is prepared to check toolbar bounds, preview cancel,
+  selected copy while retaining destination-only content, and rejection of a
+  destination edit made after clone preview. It has compiled locally but has
+  not yet passed the hosted UI run.
 
 ## Next verification and implementation
 
