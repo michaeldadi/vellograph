@@ -229,7 +229,8 @@ final class WorkspaceModel {
     var shelf: [ShelfEntry] = []
     var shelfLeftID: UUID?
     var shelfRightID: UUID?
-    var isLoading = false
+    private var activeLoads = 0
+    var isLoading: Bool { activeLoads > 0 }
     var errorMessage: String?
     var noticeMessage: String?
     private var didRestore = false
@@ -374,9 +375,9 @@ final class WorkspaceModel {
     }
 
     func openGitFile(_ path: String, from commit: GitCommit, in repository: GitRepository) {
-        isLoading = true
+        beginLoading()
         Task {
-            defer { isLoading = false }
+            defer { endLoading() }
             do {
                 let comparison = try await Task.detached(priority: .userInitiated) { () -> TextComparison in
                     let git = GitClient()
@@ -397,9 +398,9 @@ final class WorkspaceModel {
     func openGitRangeFile(_ change: GitPathChange, from leftID: String, to rightID: String,
                           in root: URL, navigation: GitRangeNavigation? = nil,
                           replacing tabID: UUID? = nil) {
-        isLoading = true
+        beginLoading()
         Task {
-            defer { isLoading = false }
+            defer { endLoading() }
             do {
                 let comparison = try await Task.detached(priority: .userInitiated) { () -> TextComparison in
                     let git = GitClient()
@@ -437,9 +438,9 @@ final class WorkspaceModel {
     }
 
     func openGitFileRevision(_ revision: GitFileRevision, in repository: GitRepository) {
-        isLoading = true
+        beginLoading()
         Task {
-            defer { isLoading = false }
+            defer { endLoading() }
             do {
                 let comparison = try await Task.detached(priority: .userInitiated) { () -> TextComparison in
                     let git = GitClient()
@@ -459,9 +460,9 @@ final class WorkspaceModel {
     }
 
     func openWorkingCopyFile(_ entry: GitStatusEntry, staged: Bool, in repository: GitRepository) {
-        isLoading = true
+        beginLoading()
         Task {
-            defer { isLoading = false }
+            defer { endLoading() }
             do {
                 let comparison = try await Task.detached(priority: .userInitiated) { () -> TextComparison in
                     let git = GitClient()
@@ -493,9 +494,9 @@ final class WorkspaceModel {
 
     func openGitConflict(_ entry: GitStatusEntry, in repository: GitRepository) {
         guard entry.isUnmerged else { return }
-        isLoading = true
+        beginLoading()
         Task {
-            defer { isLoading = false }
+            defer { endLoading() }
             do {
                 let content = try await Task.detached(priority: .userInitiated) { () -> ComparisonContent in
                     let git = GitClient()
@@ -585,8 +586,8 @@ final class WorkspaceModel {
             await openDeepLink(urls[0])
             return selection
         }
-        isLoading = true
-        defer { isLoading = false }
+        beginLoading()
+        defer { endLoading() }
         let candidates = urls.filter { $0.isFileURL }
         guard !candidates.isEmpty else {
             errorMessage = "No local files were provided."
@@ -756,6 +757,10 @@ final class WorkspaceModel {
     private func isManagedSnapshot(_ url: URL) -> Bool {
         ManagedSnapshots.contains(url)
     }
+
+    private func beginLoading() { activeLoads += 1 }
+
+    private func endLoading() { activeLoads -= 1 }
 
     private func discardClipboardIfUnused(_ url: URL) {
         guard ManagedSnapshots.containsClipboard(url),

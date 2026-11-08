@@ -518,7 +518,12 @@ local use, hosted CI, and release qualification.
   the new assertion expected one skipped tab, but the test had opened the same
   comparison twice before relaunch, so two tabs were saved. The failing run's
   screen recording showed the correct two-tab message. The assertion now checks
-  for two skipped tabs. This corrected workflow is pending a hosted run.
+  for two skipped tabs. Hosted run `42510950730` passed both jobs at commit
+  `ce2ada2`, including all 14 native UI cases and the folder parent-swap test.
+- The workspace loading indicator now counts overlapping file and Git opens,
+  so an earlier request finishing cannot hide progress while another is still
+  running. The build passes locally; concurrent-request UI verification remains
+  open.
 
 ## Next verification and implementation
 
