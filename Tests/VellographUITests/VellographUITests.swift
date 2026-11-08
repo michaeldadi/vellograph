@@ -40,8 +40,7 @@ import XCTest
         let app = XCUIApplication()
         app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
         app.launchEnvironment["VELLOGRAPH_UI_TEST_SUITE"] = suite
-        app.launch()
-        openFixtureFolder(folder, in: app)
+        try launchWithFixtures([left, right], in: app)
         XCTAssertTrue(app.staticTexts["1 changes"].waitForExistence(timeout: 10))
         app.buttons["Show welcome"].click()
         XCTAssertTrue(app.staticTexts["Recent Comparisons"].waitForExistence(timeout: 5))
@@ -53,6 +52,7 @@ import XCTest
         XCTAssertTrue(app.staticTexts["1 changes"].waitForExistence(timeout: 10))
 
         app.terminate()
+        app.launchEnvironment.removeValue(forKey: "VELLOGRAPH_UI_TEST_PATHS")
         app.launch()
         XCTAssertTrue(app.staticTexts["1 changes"].waitForExistence(timeout: 10))
         app.terminate()
@@ -72,20 +72,15 @@ import XCTest
             try? FileManager.default.removeItem(at: folder)
             UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite)
         }
-        try Data("a\n".utf8).write(to: folder.appendingPathComponent("a.txt"))
-        try Data("b\n".utf8).write(to: folder.appendingPathComponent("b.txt"))
+        let left = folder.appendingPathComponent("a.txt")
+        let right = folder.appendingPathComponent("b.txt")
+        try Data("a\n".utf8).write(to: left)
+        try Data("b\n".utf8).write(to: right)
 
         let app = XCUIApplication()
         app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
         app.launchEnvironment["VELLOGRAPH_UI_TEST_SUITE"] = suite
-        app.launch()
-        app.buttons["Add to Shelf…"].click()
-        XCTAssertTrue(app.dialogs["Open"].waitForExistence(timeout: 5))
-        app.typeKey("g", modifierFlags: [.command, .shift])
-        app.typeText(folder.path)
-        app.typeKey(XCUIKeyboardKey.return.rawValue, modifierFlags: [])
-        app.typeKey("a", modifierFlags: .command)
-        app.dialogs["Open"].buttons["Open"].click()
+        try launchWithFixtures([left, right], in: app, seedShelf: true)
 
         let labels = app.textFields.matching(identifier: "Source label")
         XCTAssertEqual(labels.count, 2)
@@ -102,6 +97,8 @@ import XCTest
         XCTAssertFalse(app.buttons["Compare A/B"].isEnabled)
 
         app.terminate()
+        app.launchEnvironment.removeValue(forKey: "VELLOGRAPH_UI_TEST_PATHS")
+        app.launchEnvironment.removeValue(forKey: "VELLOGRAPH_UI_TEST_SEED_SHELF")
         app.launch()
         let restored = app.textFields.matching(identifier: "Source label")
         XCTAssertEqual(restored.count, 2)
@@ -115,13 +112,14 @@ import XCTest
             .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
-        try Data("same\nold\n".utf8).write(to: folder.appendingPathComponent("a.txt"))
-        try Data("same\nnew\n".utf8).write(to: folder.appendingPathComponent("b.txt"))
+        let left = folder.appendingPathComponent("a.txt")
+        let right = folder.appendingPathComponent("b.txt")
+        try Data("same\nold\n".utf8).write(to: left)
+        try Data("same\nnew\n".utf8).write(to: right)
 
         let app = XCUIApplication()
         app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
-        app.launch()
-        openFixtureFolder(folder, in: app)
+        try launchWithFixtures([left, right], in: app)
 
         XCTAssertTrue(app.staticTexts["1 changes"].waitForExistence(timeout: 10))
         let next = app.buttons["Next"]
@@ -134,15 +132,14 @@ import XCTest
             .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
-        try writePNG([255, 0, 0, 255, 255, 0, 0, 255],
-                     to: folder.appendingPathComponent("a.png"))
-        try writePNG([255, 0, 0, 255, 0, 0, 255, 255],
-                     to: folder.appendingPathComponent("b.png"))
+        let left = folder.appendingPathComponent("a.png")
+        let right = folder.appendingPathComponent("b.png")
+        try writePNG([255, 0, 0, 255, 255, 0, 0, 255], to: left)
+        try writePNG([255, 0, 0, 255, 0, 0, 255, 255], to: right)
 
         let app = XCUIApplication()
         app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
-        app.launch()
-        openFixtureFolder(folder, in: app)
+        try launchWithFixtures([left, right], in: app)
 
         let window = app.windows.firstMatch
         let navigator = app.buttons["Navigator"]
@@ -190,8 +187,7 @@ import XCTest
 
         let app = XCUIApplication()
         app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
-        app.launch()
-        openFixtureFolder(folder, in: app)
+        try launchWithFixtures([reference, floating], in: app)
         let align = app.buttons["Perspective Align"]
         XCTAssertTrue(align.waitForExistence(timeout: 10))
         align.click()
@@ -208,14 +204,16 @@ import XCTest
             .appendingPathComponent("vellograph-ui-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
-        try Data("same\nbase\n".utf8).write(to: folder.appendingPathComponent("0-base.txt"))
-        try Data("same\nlocal\n".utf8).write(to: folder.appendingPathComponent("1-local.txt"))
-        try Data("same\nremote\n".utf8).write(to: folder.appendingPathComponent("2-remote.txt"))
+        let base = folder.appendingPathComponent("0-base.txt")
+        let local = folder.appendingPathComponent("1-local.txt")
+        let remote = folder.appendingPathComponent("2-remote.txt")
+        try Data("same\nbase\n".utf8).write(to: base)
+        try Data("same\nlocal\n".utf8).write(to: local)
+        try Data("same\nremote\n".utf8).write(to: remote)
 
         let app = XCUIApplication()
         app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
-        app.launch()
-        openFixtureFolder(folder, in: app)
+        try launchWithFixtures([base, local, remote], in: app)
         let confirm = app.buttons["Confirm Roles"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 10))
         let baseRole = app.popUpButtons.element(boundBy: 0)
@@ -262,8 +260,7 @@ import XCTest
 
         let app = XCUIApplication()
         app.launchEnvironment["VELLOGRAPH_UI_TESTING"] = "1"
-        app.launch()
-        openFixtureFolder(folder, in: app)
+        try launchWithFixtures([repository], in: app)
         let staged = app.buttons["Staged"]
         XCTAssertTrue(staged.waitForExistence(timeout: 10))
         staged.click()
@@ -272,14 +269,13 @@ import XCTest
         XCTAssertFalse(resolve.isEnabled)
     }
 
-    private func openFixtureFolder(_ folder: URL, in app: XCUIApplication) {
-        app.buttons["Open Files or Folders…"].click()
-        XCTAssertTrue(app.dialogs["Open"].waitForExistence(timeout: 5))
-        app.typeKey("g", modifierFlags: [.command, .shift])
-        app.typeText(folder.path)
-        app.typeKey(XCUIKeyboardKey.return.rawValue, modifierFlags: [])
-        app.typeKey("a", modifierFlags: .command)
-        app.dialogs["Open"].buttons["Open"].click()
+    private func launchWithFixtures(_ urls: [URL], in app: XCUIApplication,
+                                    seedShelf: Bool = false) throws {
+        let paths = urls.map(\.path)
+        let data = try JSONEncoder().encode(paths)
+        app.launchEnvironment["VELLOGRAPH_UI_TEST_PATHS"] = String(decoding: data, as: UTF8.self)
+        if seedShelf { app.launchEnvironment["VELLOGRAPH_UI_TEST_SEED_SHELF"] = "1" }
+        app.launch()
     }
 
     private func writePNG(_ pixels: [UInt8], to url: URL) throws {

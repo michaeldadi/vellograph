@@ -359,7 +359,14 @@ local use, hosted CI, and release qualification.
   macOS 27 runner with parallel UI execution disabled. Its first run failed;
   `xcodebuild -quiet` did not include the failing assertion in the job log.
   The workflow now prints the `.xcresult` summary and retains the result bundle
-  for a failed run. The hosted UI gate remains unqualified.
+  for a failed run. The result bundle showed that the hosted file picker
+  selected 165 runner-directory items instead of the two fixture files after
+  its Go to Folder action. The downstream UI tests now receive explicit,
+  disposable fixture paths through a test-only launch environment; the
+  separate welcome test still opens and cancels the native file picker.
+  Swift package tests and the signed Xcode build pass. Local UI automation
+  remains unauthorized after the macOS Automation Mode interruption, and
+  the revised hosted UI gate has not yet passed.
 
 ## Next verification and implementation
 
