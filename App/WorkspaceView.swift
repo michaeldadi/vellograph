@@ -262,7 +262,9 @@ private struct SourcePathBar: View {
 }
 
 struct SettingsView: View {
+    let workspace: WorkspaceModel
     @AppStorage("showMenuBarHelper.v1") private var showMenuBarHelper = false
+    @State private var showingDropHelper = false
 
     var body: some View {
         Form {
@@ -272,7 +274,10 @@ struct SettingsView: View {
                 }
             if showMenuBarHelper {
                 Button("Open Drop Helper") {
-                    MenuBarController.shared.showPopover()
+                    showingDropHelper = true
+                }
+                .popover(isPresented: $showingDropHelper) {
+                    MenuBarDropView(workspace: workspace)
                 }
             }
             LabeledContent("Minimum macOS", value: "27")

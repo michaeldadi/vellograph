@@ -55,7 +55,7 @@ struct VellographApp: App {
             }
         }
         Settings {
-            SettingsView()
+            SettingsView(workspace: workspace)
         }
     }
 }

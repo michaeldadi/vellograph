@@ -172,7 +172,12 @@ local use, hosted CI, and release qualification.
   caused an app-graph startup loop on macOS 27.2, so it was replaced. The
   AppKit version launches normally and sits at zero idle CPU in this check;
   the Settings toggle was exercised on and off. Direct popover and drag/drop
-  interaction are still unverified. The helper is left off in settings.
+  interaction were initially unverified. The Settings button did not show its
+  status-item popover on this Mac. It now presents the same drop view as a
+  SwiftUI popover attached to the button. The installed signed build visibly
+  showed "Drop files to compare", "Open Files…", and "Show App" after clicking
+  it, and Escape dismissed it. The helper was left off in settings. Direct
+  menu bar activation and drag/drop remain unverified.
 - Git worktree discovery passed a temporary linked-worktree test. The native
   Worktrees menu opened the detached checkout from a disposable repository.
 - Git tree, index, and working-copy reads now distinguish file blobs from
@@ -387,7 +392,16 @@ local use, hosted CI, and release qualification.
   changes and passed bundle and signature readback. A local screenshot exposed
   the Direction picker label wrapping at the minimum window width, so its
   redundant visible label was hidden; the installed app's toolbar was then
-  visually checked again. The label-only revision still needs hosted CI.
+  visually checked again. The follow-up hosted run `42479394167` passed both
+  jobs at commit `4377a46`.
+- An eleventh hosted native UI case exercised the text layout choices, a
+  whitespace-only difference changing from one to zero with Ignore Whitespace,
+  and an error after the source was removed and Refresh was requested. Singular
+  change, conflict, file, and difference counts were corrected across the UI.
+  The hosted run `42479949299` passed both jobs at commit `657b939`.
+  Local Swift package tests and a signed Xcode test build passed. The signed
+  Debug app installed in `~/Applications` includes these changes; bundle and
+  deep signature checks passed, and it launched afterward.
 
 ## Next verification and implementation
 

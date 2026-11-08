@@ -10,9 +10,9 @@ This is a local development proof, not a public release qualification.
   About panel showed 0.2.1 (4). The installed app passed
   `codesign --verify --deep --strict`, and its feed URL is
   `https://michaeldadi.github.io/vellograph/appcast.xml`.
-- The Vellograph 0.2.1 archive and appcast were signed with the same local
-  EdDSA key and published as an update-proof prerelease. GitHub Pages served
-  the appcast byte-for-byte as generated locally.
+- The Vellograph 0.2.1 archive was signed with the local EdDSA key, and its
+  signature was included in the appcast published for the update-proof
+  prerelease. GitHub Pages served the appcast byte-for-byte as generated locally.
 - Before the rename, the following Mac Diff Studio proof also passed:
 - macOS 27.2, Apple Silicon. Installed build 0.1.0 (1) in `~/Applications`.
 - Published build 0.1.1 (2) as a GitHub prerelease and its Sparkle appcast on GitHub Pages.
@@ -20,7 +20,8 @@ This is a local development proof, not a public release qualification.
 - **Install Update** downloaded and extracted the archive. **Install and Relaunch** replaced the app. The relaunched About panel showed 0.1.1 (2), and `codesign --verify --deep --strict` passed.
 - `sign_update --verify` accepted the published archive and rejected a copy modified by one byte. This tests the archive signature, not Sparkle's in-app error presentation.
 - A signed 0.1.0 archive was restored and launched; About showed 0.1.0 (1). The 0.1.1 app was then restored and its code signature verified. This tests a manual local rollback path.
-- The appcast is EdDSA signed. The private EdDSA key remains in the local Keychain.
+- The appcast's archive enclosure carries an EdDSA signature. The feed is
+  delivered over HTTPS; the private EdDSA key remains in the local Keychain.
 
 ## Still required before release
 
