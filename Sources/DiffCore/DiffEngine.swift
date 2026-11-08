@@ -38,9 +38,15 @@ public enum DiffEngine {
         _ new: [TextLine],
         options: DiffOptions = .init()
     ) throws -> DiffResult {
-        let oldKeys = old.map { key($0, options: options) }
-        let newKeys = new.map { key($0, options: options) }
-        let anchors = patienceAnchors(oldKeys, newKeys)
+        let oldKeys = try old.enumerated().map { index, line in
+            if index.isMultiple(of: 4_096) { try Task<Never, Never>.checkCancellation() }
+            return key(line, options: options)
+        }
+        let newKeys = try new.enumerated().map { index, line in
+            if index.isMultiple(of: 4_096) { try Task<Never, Never>.checkCancellation() }
+            return key(line, options: options)
+        }
+        let anchors = try patienceAnchors(oldKeys, newKeys)
         var operations: [DiffOperation] = []
         var oldStart = 0
         var newStart = 0
@@ -57,7 +63,7 @@ public enum DiffEngine {
             oldStart = oldIndex + 1
             newStart = newIndex + 1
         }
-        return DiffResult(operations: operations, hunks: makeHunks(operations))
+        return DiffResult(operations: operations, hunks: try makeHunks(operations))
     }
 
     private static func key(_ line: TextLine, options: DiffOptions) -> String {
@@ -68,12 +74,19 @@ public enum DiffEngine {
         return value + (options.ignoreLineEndings ? "" : line.ending)
     }
 
-    private static func patienceAnchors(_ old: [String], _ new: [String]) -> [(Int, Int)] {
+    private static func patienceAnchors(_ old: [String], _ new: [String]) throws -> [(Int, Int)] {
         var oldPositions: [String: [Int]] = [:]
         var newPositions: [String: [Int]] = [:]
-        for (i, key) in old.enumerated() { oldPositions[key, default: []].append(i) }
-        for (i, key) in new.enumerated() { newPositions[key, default: []].append(i) }
-        let pairs = old.enumerated().compactMap { (i, key) -> (Int, Int)? in
+        for (i, key) in old.enumerated() {
+            if i.isMultiple(of: 4_096) { try Task<Never, Never>.checkCancellation() }
+            oldPositions[key, default: []].append(i)
+        }
+        for (i, key) in new.enumerated() {
+            if i.isMultiple(of: 4_096) { try Task<Never, Never>.checkCancellation() }
+            newPositions[key, default: []].append(i)
+        }
+        let pairs = try old.enumerated().compactMap { (i, key) throws -> (Int, Int)? in
+            if i.isMultiple(of: 4_096) { try Task<Never, Never>.checkCancellation() }
             guard oldPositions[key]?.count == 1, let positions = newPositions[key], positions.count == 1 else { return nil }
             return (i, positions[0])
         }
@@ -82,6 +95,7 @@ public enum DiffEngine {
         var tails: [Int] = []
         var previous = Array(repeating: -1, count: pairs.count)
         for i in pairs.indices {
+            if i.isMultiple(of: 4_096) { try Task<Never, Never>.checkCancellation() }
             let value = pairs[i].1
             var low = 0
             var high = tails.count
@@ -105,14 +119,53 @@ public enum DiffEngine {
         _ old: [String], _ new: [String],
         oldRange: Range<Int>, newRange: Range<Int>
     ) throws -> [DiffOperation] {
-        if oldRange.isEmpty { return newRange.map { .insert(new: $0) } }
-        if newRange.isEmpty { return oldRange.map { .delete(old: $0) } }
+        var oldStart = oldRange.lowerBound
+        var newStart = newRange.lowerBound
+        var prefix: [DiffOperation] = []
+        while oldStart < oldRange.upperBound, newStart < newRange.upperBound,
+              old[oldStart] == new[newStart] {
+            if prefix.count.isMultiple(of: 4_096) { try Task<Never, Never>.checkCancellation() }
+            prefix.append(.equal(old: oldStart, new: newStart))
+            oldStart += 1
+            newStart += 1
+        }
+
+        var oldEnd = oldRange.upperBound
+        var newEnd = newRange.upperBound
+        while oldEnd > oldStart, newEnd > newStart,
+              old[oldEnd - 1] == new[newEnd - 1] {
+            if (oldRange.upperBound - oldEnd).isMultiple(of: 4_096) {
+                try Task<Never, Never>.checkCancellation()
+            }
+            oldEnd -= 1
+            newEnd -= 1
+        }
+
+        let middle = try unmatchedSegment(old, new,
+                                          oldRange: oldStart..<oldEnd,
+                                          newRange: newStart..<newEnd)
+        let suffix = try (oldEnd..<oldRange.upperBound).enumerated().map { offset, oldIndex in
+            if offset.isMultiple(of: 4_096) { try Task<Never, Never>.checkCancellation() }
+            return DiffOperation.equal(old: oldIndex, new: newEnd + offset)
+        }
+        return prefix + middle + suffix
+    }
+
+    private static func unmatchedSegment(
+        _ old: [String], _ new: [String],
+        oldRange: Range<Int>, newRange: Range<Int>
+    ) throws -> [DiffOperation] {
+        if oldRange.isEmpty || newRange.isEmpty {
+            return try coarseOperations(oldRange: oldRange, newRange: newRange)
+        }
 
         // The standard library's collection difference uses a Myers-style edit
-        // script. Bound unusually large unmatched regions so an adversarial file
-        // cannot monopolize memory or the UI.
-        if oldRange.count + newRange.count > 30_000 {
-            return oldRange.map { .delete(old: $0) } + newRange.map { .insert(new: $0) }
+        // script. Bound both input size and the possible search area: two
+        // unrelated 10,000-line blocks are much more expensive than a tiny
+        // insertion beside a long unchanged prefix.
+        if oldRange.count + newRange.count > 30_000 ||
+            oldRange.count > 1_000_000 / newRange.count {
+            return try coarseOperations(oldRange: oldRange, newRange: newRange)
         }
         try Task<Never, Never>.checkCancellation()
         let difference = Array(new[newRange]).difference(from: Array(old[oldRange]))
@@ -128,6 +181,7 @@ public enum DiffEngine {
         var oldOffset = 0
         var newOffset = 0
         while oldOffset < oldRange.count || newOffset < newRange.count {
+            if result.count.isMultiple(of: 4_096) { try Task<Never, Never>.checkCancellation() }
             if deleted.contains(oldOffset), oldOffset < oldRange.count {
                 result.append(.delete(old: oldRange.lowerBound + oldOffset))
                 oldOffset += 1
@@ -149,7 +203,21 @@ public enum DiffEngine {
         return result
     }
 
-    private static func makeHunks(_ operations: [DiffOperation]) -> [DiffHunk] {
+    private static func coarseOperations(oldRange: Range<Int>, newRange: Range<Int>) throws -> [DiffOperation] {
+        var result: [DiffOperation] = []
+        result.reserveCapacity(oldRange.count + newRange.count)
+        for index in oldRange {
+            if result.count.isMultiple(of: 4_096) { try Task<Never, Never>.checkCancellation() }
+            result.append(.delete(old: index))
+        }
+        for index in newRange {
+            if result.count.isMultiple(of: 4_096) { try Task<Never, Never>.checkCancellation() }
+            result.append(.insert(new: index))
+        }
+        return result
+    }
+
+    private static func makeHunks(_ operations: [DiffOperation]) throws -> [DiffHunk] {
         var hunks: [DiffHunk] = []
         var oldPosition = 0
         var newPosition = 0
@@ -159,7 +227,8 @@ public enum DiffEngine {
             guard let startOld, let startNew else { return }
             hunks.append(DiffHunk(id: hunks.count, oldRange: startOld..<oldPosition, newRange: startNew..<newPosition))
         }
-        for operation in operations {
+        for (index, operation) in operations.enumerated() {
+            if index.isMultiple(of: 4_096) { try Task<Never, Never>.checkCancellation() }
             switch operation {
             case .equal:
                 finish()

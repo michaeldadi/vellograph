@@ -1,0 +1,68 @@
+name: macOS 27 CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: xcode-27
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Record toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+
+      - name: Test core packages
+        run: swift test --jobs 3
+
+      - name: Build native app
+        run: |
+          xcodebuild -quiet \
+            -project Vellograph.xcodeproj \
+            -scheme Vellograph \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/VellographDerivedData" \
+            -jobs 3 \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Verify bundled command
+        run: |
+          scripts/verify-app-bundle.sh \
+            "$RUNNER_TEMP/VellographDerivedData/Build/Products/Debug/Vellograph.app"
+
+      - name: Verify command failure behavior
+        run: |
+          scripts/verify-cli-failures.sh \
+            "$RUNNER_TEMP/VellographDerivedData/Build/Products/Debug/Vellograph.app"
+
+      - name: Record weekly core performance
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          swift build -c release --product vellograph-bench --jobs 3
+          /usr/bin/time -l .build/release/vellograph-bench
+          /usr/bin/time -l .build/release/vellograph-bench --folder100k
+          mkdir -p "$RUNNER_TEMP/vellograph-image-fixtures"
+          sips -z 4096 4096 Artwork/VellographIcon-master.png \
+            --out "$RUNNER_TEMP/vellograph-image-fixtures/a.png"
+          sips -r 90 "$RUNNER_TEMP/vellograph-image-fixtures/a.png" \
+            --out "$RUNNER_TEMP/vellograph-image-fixtures/b.png"
+          /usr/bin/time -l .build/release/vellograph-bench --image \
+            "$RUNNER_TEMP/vellograph-image-fixtures/a.png" \
+            "$RUNNER_TEMP/vellograph-image-fixtures/b.png"

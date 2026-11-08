@@ -11,7 +11,8 @@ struct WorkspaceView: View {
         VStack(spacing: 0) {
             if !workspace.tabs.isEmpty { tabStrip }
             if let tab = workspace.selectedTab {
-                content(for: tab)
+                if !tab.sources.isEmpty { SourcePathBar(sources: tab.sources) }
+                content(for: tab).id(tab.contentVersion)
             } else {
                 welcome
             }
@@ -19,7 +20,11 @@ struct WorkspaceView: View {
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button("Open Files", systemImage: "folder.badge.plus") { workspace.chooseFiles() }
-                Button("Compare Clipboard", systemImage: "doc.on.clipboard") { workspace.addClipboard() }
+                Button("Add to Shelf", systemImage: "square.stack.3d.up.badge.a") {
+                    workspace.chooseShelfSources()
+                    workspace.showWelcome()
+                }
+                Button("Add Clipboard", systemImage: "doc.on.clipboard") { workspace.addClipboard() }
             }
         }
         .overlay(alignment: .bottom) {
@@ -39,15 +44,28 @@ struct WorkspaceView: View {
             Text(workspace.errorMessage ?? "")
         }
         .dropDestination(for: URL.self) { urls, _ in
-            Task { await workspace.open(urls: urls) }
+            workspace.addToShelf(urls)
+            if urls.count <= 3 { Task { await workspace.open(urls: urls) } }
+            else { workspace.showWelcome() }
             return true
         }
-        .task { await workspace.restoreSession() }
+        .task {
+            await workspace.restoreSession()
+            workspace.startIPC()
+        }
     }
 
     private var tabStrip: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 4) {
+                Button {
+                    workspace.showWelcome()
+                } label: {
+                    Image(systemName: "house")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Show welcome")
+                .padding(.horizontal, 10)
                 ForEach(workspace.tabs) { tab in
                     HStack(spacing: 8) {
                         Text(tab.title).lineLimit(1)
@@ -73,30 +91,64 @@ struct WorkspaceView: View {
 
     @ViewBuilder private func content(for tab: ComparisonTab) -> some View {
         switch tab.content {
-        case .text(let comparison): TextComparisonView(comparison: comparison)
-        case .merge(let comparison): MergeComparisonView(comparison: comparison)
-        case .folders(let entries): FolderComparisonView(entries: entries)
+        case .text(let comparison):
+            TextComparisonView(comparison: comparison, workspace: workspace, tabID: tab.id)
+        case .merge(let comparison):
+            MergeComparisonView(comparison: comparison) { url in
+                workspace.completeMerge(tab.id, savedAt: url)
+            }
+        case .gitWholeFileConflict(let comparison):
+            GitWholeFileConflictView(comparison: comparison) { url in
+                workspace.completeMerge(tab.id, savedAt: url)
+            }
+        case .folders(let session): FolderComparisonView(session: session, workspace: workspace)
         case .images(let left, let right): ImageComparisonView(left: left, right: right)
-        case .repository(let repository): RepositoryView(repository: repository, workspace: workspace)
+        case .metadata(let comparison): MetadataComparisonView(comparison: comparison)
+        case .repository(let session): RepositoryView(session: session, workspace: workspace)
         case .message(let message): ContentUnavailableView(message, systemImage: "doc.questionmark")
         }
     }
 
     private var welcome: some View {
-        VStack(spacing: 18) {
+        ScrollView {
+            VStack(spacing: 18) {
             ContentUnavailableView {
                 Label("Vellograph", systemImage: "square.split.2x1")
             } description: {
                 Text("Open two sources to compare or three text files in base, local, remote order to merge.")
             } actions: {
-                Button("Open Files or Folders…") { workspace.chooseFiles() }
-                    .buttonStyle(.borderedProminent)
+                HStack {
+                    Button("Open Files or Folders…") { workspace.chooseFiles() }
+                        .buttonStyle(.borderedProminent)
+                    Button("Add to Shelf…") { workspace.chooseShelfSources() }
+                }
             }
-            if !workspace.recentComparisons.isEmpty {
+            shelfView
+            if let notice = workspace.noticeMessage {
+                Text(notice)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: 760, alignment: .leading)
+            }
+            if workspace.recentComparisons.contains(where: { $0.kind == .repository }) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Recent Repositories").font(.headline)
+                    ForEach(workspace.recentComparisons.filter { $0.kind == .repository }) { recent in
+                        Button { workspace.reopen(recent) } label: {
+                            Label(recent.title, systemImage: "arrow.triangle.branch")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                        .help(recent.paths.joined(separator: " · "))
+                    }
+                }
+                .frame(maxWidth: 500, alignment: .leading)
+            }
+            if workspace.recentComparisons.contains(where: { $0.kind != .repository }) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Recent Comparisons")
                         .font(.headline)
-                    ForEach(workspace.recentComparisons) { recent in
+                    ForEach(workspace.recentComparisons.filter { $0.kind != .repository }) { recent in
                         Button {
                             workspace.reopen(recent)
                         } label: {
@@ -109,15 +161,120 @@ struct WorkspaceView: View {
                 }
                 .frame(maxWidth: 500, alignment: .leading)
             }
-        }
+            }
         .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var shelfView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Source Shelf").font(.headline)
+                Spacer()
+                Button("Add…") { workspace.chooseShelfSources() }
+                Button("Swap A/B", systemImage: "arrow.left.arrow.right") { workspace.swapShelfSides() }
+                    .disabled(workspace.shelf.count < 2)
+                Button("Compare A/B") { workspace.compareShelfSelection() }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(workspace.shelfLeftID == nil || workspace.shelfRightID == nil ||
+                              workspace.shelfLeftID == workspace.shelfRightID)
+            }
+            if workspace.shelf.isEmpty {
+                Text("Add files or folders, then choose A and B. Sources stay in the order shown here.")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(Array(workspace.shelf.enumerated()), id: \.element.id) { index, entry in
+                    HStack(spacing: 6) {
+                        Button("A") { workspace.selectShelfLeft(entry.id) }
+                            .buttonStyle(.bordered)
+                            .tint(workspace.shelfLeftID == entry.id ? .accentColor : .secondary)
+                            .accessibilityLabel("Select \(entry.label) as A")
+                        Button("B") { workspace.selectShelfRight(entry.id) }
+                            .buttonStyle(.bordered)
+                            .tint(workspace.shelfRightID == entry.id ? .accentColor : .secondary)
+                            .accessibilityLabel("Select \(entry.label) as B")
+                        TextField("Source label", text: Binding(
+                            get: { workspace.shelf.first(where: { $0.id == entry.id })?.label ?? entry.label },
+                            set: { workspace.renameShelfEntry(entry.id, label: $0) }
+                        ))
+                        .textFieldStyle(.plain)
+                        .help(entry.path)
+                        Spacer(minLength: 4)
+                        if entry.isTemporary {
+                            Button("Save…") { workspace.saveShelfEntry(entry.id) }
+                                .help("Save this clipboard source as a file")
+                        }
+                        Button("Move Up", systemImage: "chevron.up") { workspace.moveShelfEntry(entry.id, by: -1) }
+                            .disabled(index == 0)
+                            .labelStyle(.iconOnly)
+                        Button("Move Down", systemImage: "chevron.down") { workspace.moveShelfEntry(entry.id, by: 1) }
+                            .disabled(index == workspace.shelf.count - 1)
+                            .labelStyle(.iconOnly)
+                        Button("Remove", systemImage: "xmark") { workspace.removeShelfEntry(entry.id) }
+                            .labelStyle(.iconOnly)
+                    }
+                    .padding(.vertical, 3)
+                }
+            }
+        }
+        .frame(maxWidth: 760, alignment: .leading)
+        .padding(14)
+        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+private struct SourcePathBar: View {
+    let sources: [URL]
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(Array(sources.enumerated()), id: \.offset) { index, url in
+                Menu {
+                    Button("Copy Path") {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(url.path, forType: .string)
+                    }
+                    Button("Reveal in Finder") {
+                        NSWorkspace.shared.selectFile(url.path, inFileViewerRootedAtPath: "")
+                    }
+                    Button("Open with Default App") { NSWorkspace.shared.open(url) }
+                    Button("Open Location in Terminal") {
+                        let terminal = URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app")
+                        let directory = url.hasDirectoryPath ? url : url.deletingLastPathComponent()
+                        NSWorkspace.shared.open([directory], withApplicationAt: terminal,
+                                                configuration: NSWorkspace.OpenConfiguration())
+                    }
+                } label: {
+                    Label("\(index == 0 ? "A" : index == 1 ? "B" : "C"): \(url.lastPathComponent)",
+                          systemImage: "folder")
+                        .lineLimit(1)
+                }
+                .help(url.path)
+            }
+            Spacer()
+        }
+        .font(.caption)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 5)
+        .background(.bar)
     }
 }
 
 struct SettingsView: View {
+    @AppStorage("showMenuBarHelper.v1") private var showMenuBarHelper = false
+
     var body: some View {
         Form {
+            Toggle("Show menu bar drop helper", isOn: $showMenuBarHelper)
+                .onChange(of: showMenuBarHelper) { _, visible in
+                    MenuBarController.shared.setVisible(visible)
+                }
+            if showMenuBarHelper {
+                Button("Open Drop Helper") {
+                    MenuBarController.shared.showPopover()
+                }
+            }
             LabeledContent("Minimum macOS", value: "27")
             LabeledContent("Privacy", value: "Comparisons stay on this Mac")
         }

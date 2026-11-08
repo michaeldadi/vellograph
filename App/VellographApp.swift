@@ -1,11 +1,13 @@
+import AppKit
 import SwiftUI
 import Sparkle
 
 @main
 struct VellographApp: App {
     @State private var workspace = WorkspaceModel()
+    private let serviceProvider = VellographServiceProvider()
     private let updater = SPUStandardUpdaterController(
-        startingUpdater: true,
+        startingUpdater: ProcessInfo.processInfo.environment["VELLOGRAPH_UI_TESTING"] != "1",
         updaterDelegate: nil,
         userDriverDelegate: nil
     )
@@ -17,12 +19,19 @@ struct VellographApp: App {
                 .onOpenURL { url in
                     Task { await workspace.open(urls: [url]) }
                 }
+                .task {
+                    guard ProcessInfo.processInfo.environment["VELLOGRAPH_UI_TESTING"] != "1" else { return }
+                    serviceProvider.workspace = workspace
+                    NSApp.servicesProvider = serviceProvider
+                    ShortcutsInbox.shared.connect(workspace)
+                    MenuBarController.shared.connect(workspace)
+                }
         }
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("Open…") { workspace.chooseFiles() }
                     .keyboardShortcut("o")
-                Button("Compare Clipboard") { workspace.addClipboard() }
+                Button("Add Clipboard to Shelf") { workspace.addClipboard() }
                     .keyboardShortcut("n")
             }
             CommandGroup(after: .appInfo) {

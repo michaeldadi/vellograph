@@ -32,7 +32,7 @@ public struct FolderOptions: Sendable {
 }
 
 public enum FolderComparison {
-    private struct Entry {
+    struct Entry {
         let url: URL
         let kind: FolderItemKind
         let size: Int64
@@ -80,7 +80,7 @@ public enum FolderComparison {
         return result
     }
 
-    private static func scan(_ root: URL, options: FolderOptions) throws -> [String: Entry] {
+    static func scan(_ root: URL, options: FolderOptions) throws -> [String: Entry] {
         var result: [String: Entry] = [:]
         let root = root.standardizedFileURL
         let ignoredPatterns = try options.ignoredPathPatterns.map { try NSRegularExpression(pattern: $0) }
@@ -97,7 +97,8 @@ public enum FolderComparison {
             for url in urls {
                 try Task<Never, Never>.checkCancellation()
                 let name = url.lastPathComponent
-                if options.ignoredNames.contains(name) || (!options.includeHidden && name.hasPrefix(".")) { continue }
+                if name.hasPrefix(".vellograph-") || options.ignoredNames.contains(name) ||
+                    (!options.includeHidden && name.hasPrefix(".")) { continue }
                 let path = prefix.isEmpty ? name : prefix + "/" + name
                 let range = NSRange(path.startIndex..<path.endIndex, in: path)
                 if ignoredPatterns.contains(where: { $0.firstMatch(in: path, range: range) != nil }) { continue }

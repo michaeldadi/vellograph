@@ -1,11 +1,19 @@
 # Two-version update proof (2026-11-07)
 
-This is a local development proof under the former Mac Diff Studio name, not a
-public release qualification. Vellograph has a new bundle identity and update
-feed; repeat this proof for Vellograph before releasing it.
+This is a local development proof, not a public release qualification.
 
 ## Tested on this Mac
 
+- Vellograph 0.2.0 (3) was installed in `~/Applications`. Its own Sparkle updater
+  offered the published 0.2.1 (4) prerelease from the renamed repository and
+  feed. **Install Update** and **Install and Relaunch** completed; the relaunched
+  About panel showed 0.2.1 (4). The installed app passed
+  `codesign --verify --deep --strict`, and its feed URL is
+  `https://michaeldadi.github.io/vellograph/appcast.xml`.
+- The Vellograph 0.2.1 archive and appcast were signed with the same local
+  EdDSA key and published as an update-proof prerelease. GitHub Pages served
+  the appcast byte-for-byte as generated locally.
+- Before the rename, the following Mac Diff Studio proof also passed:
 - macOS 27.2, Apple Silicon. Installed build 0.1.0 (1) in `~/Applications`.
 - Published build 0.1.1 (2) as a GitHub prerelease and its Sparkle appcast on GitHub Pages.
 - Sparkle displayed 0.1.1 and its release notes from the installed 0.1.0 app.
@@ -19,6 +27,7 @@ feed; repeat this proof for Vellograph before releasing it.
 - In-app rejection and user-facing recovery for a tampered download.
 - Offline feed and download behavior without changing this Mac's global network settings.
 - Developer ID signing and notarization for public distribution, if the Apple Developer account becomes available in Xcode. The proof archive uses an Apple Development identity; that identity is unsuitable as a general public distribution identity.
-- Repeat the update and rollback tests with the final packaging and Homebrew cask.
+- Repeat rollback, offline, and tamper UI tests for Vellograph, then test the
+  final packaging and Homebrew cask.
 
 The prerelease is intentionally labeled an update proof. It does not imply feature parity.
