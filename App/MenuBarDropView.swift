@@ -4,6 +4,7 @@ import SwiftUI
 /// A small, optional drop surface while Vellograph is running. Single-item
 /// drops are held in memory until the second item arrives or the user clears it.
 struct MenuBarDropView: View {
+    @Environment(\.openWindow) private var openWindow
     let workspace: WorkspaceModel
     @State private var first: URL?
     @State private var isTargeted = false
@@ -48,7 +49,14 @@ struct MenuBarDropView: View {
                     Button("Clear A") { first = nil }
                 }
                 Spacer()
-                Button("Show App") { NSApp.activate(ignoringOtherApps: true) }
+                Button("Show App") {
+                    if let window = NSApp.windows.first(where: { $0.title == "Vellograph" }) {
+                        window.makeKeyAndOrderFront(nil)
+                    } else {
+                        openWindow(id: "workspace")
+                    }
+                    NSApp.activate(ignoringOtherApps: true)
+                }
             }
             if let dropError {
                 Text(dropError)

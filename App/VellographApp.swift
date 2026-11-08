@@ -14,7 +14,7 @@ struct VellographApp: App {
     )
 
     var body: some Scene {
-        WindowGroup("Vellograph") {
+        WindowGroup("Vellograph", id: "workspace") {
             WorkspaceView(workspace: workspace)
                 .frame(minWidth: 900, minHeight: 580)
                 .onOpenURL { url in

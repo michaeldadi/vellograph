@@ -177,7 +177,12 @@ local use, hosted CI, and release qualification.
   SwiftUI popover attached to the button. The installed signed build visibly
   showed "Drop files to compare", "Open Files…", and "Show App" after clicking
   it, and Escape dismissed it. The helper was left off in settings. Direct
-  menu bar activation and drag/drop remain unverified.
+  menu bar activation and drag/drop remain unverified. Its "Open Files…"
+  control opened the native chooser, which was canceled without changing any
+  source. "Show App" initially left Settings in front; it now raises the
+  existing workspace window, or opens one when needed. The installed build
+  visibly returned to the workspace after this action. The helper setting was
+  returned to off after each check.
 - Git worktree discovery passed a temporary linked-worktree test. The native
   Worktrees menu opened the detached checkout from a disposable repository.
 - Git tree, index, and working-copy reads now distinguish file blobs from
