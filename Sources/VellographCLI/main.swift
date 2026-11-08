@@ -244,7 +244,12 @@ private enum CommandLineClient {
     }
 
     private static func deliver(_ request: IPCRequest) throws -> IPCResponse {
-        if let response = try? LocalSocketClient.send(request) { return response }
+        let timeout: TimeInterval? = request.wait ? nil : 30
+        do {
+            return try LocalSocketClient.send(request, responseTimeout: timeout)
+        } catch IPCBridgeError.serverUnavailable {
+            // Only an absent or stale socket is a reason to start the app.
+        }
         let launch = Process()
         launch.executableURL = URL(fileURLWithPath: "/usr/bin/open")
         launch.arguments = ["-b", "io.github.michaeldadi.vellograph"]
@@ -254,7 +259,11 @@ private enum CommandLineClient {
             throw CLIError.usage("Could not launch Vellograph. Open the app and retry.")
         }
         for _ in 0..<150 {
-            if let response = try? LocalSocketClient.send(request) { return response }
+            do {
+                return try LocalSocketClient.send(request, responseTimeout: timeout)
+            } catch IPCBridgeError.serverUnavailable {
+                // Give the newly launched app time to publish its socket.
+            }
             Thread.sleep(forTimeInterval: 0.2)
         }
         throw CLIError.usage("Vellograph did not accept the command. Open the app and retry.")

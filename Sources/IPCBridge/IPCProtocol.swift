@@ -43,8 +43,10 @@ public struct IPCResponse: Codable, Sendable {
     }
 }
 
-public enum IPCBridgeError: Error, LocalizedError {
+public enum IPCBridgeError: Error, LocalizedError, Equatable {
+    case serverUnavailable
     case insecureDirectory
+    case unsafeSocket
     case insecureSnapshotDirectory
     case pathTooLong
     case alreadyRunning
@@ -56,7 +58,9 @@ public enum IPCBridgeError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
+        case .serverUnavailable: "Vellograph is not accepting local commands yet."
         case .insecureDirectory: "The Vellograph IPC directory is not a private directory owned by this user."
+        case .unsafeSocket: "The Vellograph IPC socket is not a private socket owned by this user."
         case .insecureSnapshotDirectory: "The Vellograph snapshot directory is not a private directory owned by this user."
         case .pathTooLong: "The Vellograph IPC socket path is too long."
         case .alreadyRunning: "A Vellograph IPC server is already running."

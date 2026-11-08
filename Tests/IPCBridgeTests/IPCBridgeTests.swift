@@ -64,6 +64,47 @@ import Testing
         IPCResponse(status: 0)
     }
     #expect(throws: IPCBridgeError.self) { try server.start() }
+    #expect(throws: IPCBridgeError.insecureDirectory) {
+        try LocalSocketClient.send(IPCRequest(action: .diff), path: directory.appendingPathComponent("control.sock"))
+    }
+}
+
+@Test func absentSocketDoesNotLookLikeAnInsecurePeer() throws {
+    let directory = URL(fileURLWithPath: "/tmp", isDirectory: true)
+        .appendingPathComponent("vellograph-ipc-missing-\(UUID().uuidString)", isDirectory: true)
+    let request = IPCRequest(action: .diff)
+    #expect(throws: IPCBridgeError.serverUnavailable) {
+        try LocalSocketClient.send(request, path: directory.appendingPathComponent("control.sock"))
+    }
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                                            attributes: [.posixPermissions: 0o700])
+    defer { try? FileManager.default.removeItem(at: directory) }
+    #expect(throws: IPCBridgeError.serverUnavailable) {
+        try LocalSocketClient.send(request, path: directory.appendingPathComponent("control.sock"))
+    }
+    try Data("not a socket".utf8).write(to: directory.appendingPathComponent("control.sock"))
+    #expect(throws: IPCBridgeError.unsafeSocket) {
+        try LocalSocketClient.send(request, path: directory.appendingPathComponent("control.sock"))
+    }
+}
+
+@Test func silentSocketPeerTimesOut() throws {
+    let directory = URL(fileURLWithPath: "/tmp", isDirectory: true)
+        .appendingPathComponent("vellograph-ipc-silent-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                                            attributes: [.posixPermissions: 0o700])
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let server = LocalSocketServer(path: directory.appendingPathComponent("control.sock")) { _ in
+        try? await Task.sleep(for: .seconds(1))
+        return IPCResponse(status: 0)
+    }
+    try server.start()
+    defer { server.stop() }
+    #expect(throws: IPCBridgeError.transport("Response timed out.")) {
+        try LocalSocketClient.send(IPCRequest(action: .diff),
+                                   path: directory.appendingPathComponent("control.sock"),
+                                   responseTimeout: 0.1)
+    }
 }
 
 @Test func abandonedSnapshotsAreRemovedWithoutTouchingOtherFiles() throws {

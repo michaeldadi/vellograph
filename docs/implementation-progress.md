@@ -265,8 +265,9 @@ uncommitted.
 - `.github/workflows/macos-ci.yml` now defines read-only PR, main-branch, and
   weekly package tests plus an unsigned Xcode app build on the `xcode-27`
   runner. Scheduled and manual runs also record the core text, folder, and
-  image performance probes. The workflow is local and has not run on GitHub
-  yet; its timing output is observational until runner baselines are measured.
+  image performance probes. The hosted `build-and-test` job passed on commit
+  `bab77b6` (run `42473717947`). Its timing output remains observational
+  until runner baselines are measured.
 - An Xcode UI test target now isolates session preferences and IPC during its
   launch. Local XCUITest checks passed for the welcome screen and native file
   picker, opening a two-file text fixture and navigating its change, and
@@ -326,13 +327,26 @@ uncommitted.
   closed without output returned status 1 and created no file. Repeating that
   merge, choosing Remote in the native app, building, and saving the requested
   output returned status 0; the output bytes matched Remote and both source
-  files stayed unchanged. Transport-failure behavior remains open.
+  files stayed unchanged. Transport-failure behavior still needs a complete
+  installed-app workflow.
 - Git's actual `mergetool` host invoked the installed Vellograph command for
   a disposable text conflict. Closing its unresolved tab made Git report a
   failed merge and kept all three unmerged index stages. Repeating the host
   invocation, selecting Remote, and saving `conflict.txt` returned success,
   wrote the expected bytes, and cleared the index conflict. Repository-local
   tool settings were then uninstalled and read back as absent.
+- The CLI now launches Vellograph only when its private socket is absent or
+  stale. An insecure directory or non-socket path fails immediately, and
+  non-waiting commands have a 30-second response timeout. IPC package tests
+  covered missing, unsafe, and silent sockets. All Swift package tests, the
+  signed Xcode build, bundle verification, and the seven invalid-command
+  checks passed after the change. A real installed-app transport failure has
+  not yet been exercised.
+- A later eight-case Xcode UI rerun was interrupted when macOS logged a user
+  gesture that stopped Automation Mode during the image fixture. The resulting
+  loss of accessibility authorization affected the remaining cases. The
+  earlier focused and full passes remain recorded above; this latest rerun is
+  not a passing release gate.
 
 ## Next verification and implementation
 
@@ -341,8 +355,8 @@ uncommitted.
    performance checks, and remaining CLI failure workflows.
 2. Complete the remaining text, image, folder, Git, workspace, and integration
    outcomes in the capability checklist; test keyboard and failure paths.
-3. Run the update tamper/offline/rollback checks, performance and UI gates,
-   hosted CI, release packaging, and Homebrew cask validation.
+3. Run the update tamper/offline/rollback checks, performance and uninterrupted
+   UI gates, release packaging, and Homebrew cask validation.
 
 Run `swift test` and the Xcode app build after code changes. Keep status as
 implemented, locally exercised, or release-qualified rather than treating

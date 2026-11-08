@@ -91,15 +91,43 @@ public final class LocalSocketServer: @unchecked Sendable {
 }
 
 public enum LocalSocketClient {
-    public static func send(_ request: IPCRequest, path: URL = IPCPaths.socket) throws -> IPCResponse {
+    public static func send(_ request: IPCRequest, path: URL = IPCPaths.socket,
+                            responseTimeout: TimeInterval? = nil) throws -> IPCResponse {
         try SocketIO.ensurePrivateDirectory(path.deletingLastPathComponent(), create: false)
+        var socketDetails = Darwin.stat()
+        guard lstat(path.path, &socketDetails) == 0 else {
+            if errno == ENOENT { throw IPCBridgeError.serverUnavailable }
+            throw SocketIO.systemError()
+        }
+        guard socketDetails.st_uid == geteuid(),
+              socketDetails.st_mode & mode_t(S_IFMT) == mode_t(S_IFSOCK),
+              socketDetails.st_mode & 0o077 == 0 else {
+            throw IPCBridgeError.unsafeSocket
+        }
         let address = try SocketIO.address(for: path)
         let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
         guard fd >= 0 else { throw SocketIO.systemError() }
         defer { Darwin.close(fd) }
         try SocketIO.disableSIGPIPE(fd)
+        if let responseTimeout {
+            guard responseTimeout > 0, responseTimeout.isFinite,
+                  responseTimeout < TimeInterval(Int.max) else {
+                throw IPCBridgeError.transport("Invalid response timeout.")
+            }
+            var interval = timeval(tv_sec: Int(responseTimeout),
+                                   tv_usec: max(1, Int32((responseTimeout.truncatingRemainder(dividingBy: 1)) * 1_000_000)))
+            guard setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &interval,
+                             socklen_t(MemoryLayout<timeval>.size)) == 0,
+                  setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &interval,
+                             socklen_t(MemoryLayout<timeval>.size)) == 0 else {
+                throw SocketIO.systemError()
+            }
+        }
         try SocketIO.withAddress(address) { pointer, length in
-            guard Darwin.connect(fd, pointer, length) == 0 else { throw SocketIO.systemError() }
+            guard Darwin.connect(fd, pointer, length) == 0 else {
+                if errno == ENOENT || errno == ECONNREFUSED { throw IPCBridgeError.serverUnavailable }
+                throw SocketIO.systemError()
+            }
         }
         try SocketIO.verifyPeer(fd)
         try SocketIO.writeLine(fd, value: request)
@@ -133,8 +161,11 @@ private enum SocketIO {
                                                     attributes: [.posixPermissions: 0o700])
         }
         var details = Darwin.stat()
-        guard lstat(url.path, &details) == 0,
-              details.st_uid == geteuid(),
+        guard lstat(url.path, &details) == 0 else {
+            if !create && errno == ENOENT { throw IPCBridgeError.serverUnavailable }
+            throw IPCBridgeError.insecureDirectory
+        }
+        guard details.st_uid == geteuid(),
               details.st_mode & mode_t(S_IFMT) == mode_t(S_IFDIR),
               details.st_mode & 0o077 == 0 else {
             throw IPCBridgeError.insecureDirectory
@@ -205,6 +236,9 @@ private enum SocketIO {
             let count = Darwin.read(fd, &byte, 1)
             if count < 0 {
                 if errno == EINTR { continue }
+                if errno == EAGAIN || errno == EWOULDBLOCK {
+                    throw IPCBridgeError.transport("Response timed out.")
+                }
                 throw systemError()
             }
             if count == 0 { throw IPCBridgeError.invalidMessage }
