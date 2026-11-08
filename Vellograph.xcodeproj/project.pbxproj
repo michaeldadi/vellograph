@@ -7,43 +7,170 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0AB939071A1AA7F11E704AEF /* DocumentCore in Frameworks */ = {isa = PBXBuildFile; productRef = 9FB99FD149EE04A2B92C6BC0 /* DocumentCore */; };
+		1176D847E929631999CA7858 /* MenuBarDropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1028AFB8C616ADD8D0896B3A /* MenuBarDropView.swift */; };
+		194DC659D8A3B4AD4E8DB5D4 /* ShortcutsIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B39FA9A0CE419419D9A824 /* ShortcutsIntents.swift */; };
+		207B7C43ADF372D9192AB045 /* GitCore in Frameworks */ = {isa = PBXBuildFile; productRef = FEF4CC51D9AFD977AD8D06C1 /* GitCore */; };
+		21D6C97AC74E0E12138FC2C7 /* CompareActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F3A969F1656451C8A7A6584 /* CompareActionViewController.swift */; };
 		24324F0FEC32E9C1A13F1833 /* DiffCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6E289D6B8401B8F9B2E4C9B2 /* DiffCore */; };
 		2541229C5F7A37073B768AF7 /* RepositoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B0006A4716C1EC8EA92F6B /* RepositoryView.swift */; };
-		43FD5A5CD566D07E08051404 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = FF2DA6EC61B4EB07FD74455F /* Sparkle */; };
+		3665DE7DCF43CFC6430E1375 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98453D64A4D5D80B9B50756 /* MenuBarController.swift */; };
+		43FD5A5CD566D07E08051404 /* FolderCore in Frameworks */ = {isa = PBXBuildFile; productRef = 89368620C01A821B2FE33F2F /* FolderCore */; };
+		4A634057E1DE547D44CCCA9B /* TextResolutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BF10A9A5AE7B89A73FC7971 /* TextResolutionView.swift */; };
+		4D7830A157E65448FE71A09F /* IPCBridge in Frameworks */ = {isa = PBXBuildFile; productRef = E0A4EF251C5F4D4E03CBFD49 /* IPCBridge */; };
+		4DBEB6F89B9F8EA34C7E2322 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FD68E473457030C5D6CEE7A3 /* Assets.xcassets */; };
 		4F362CA96C2C7A99EE743986 /* FolderComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72AF75D46B8FF13BD079C6E7 /* FolderComparisonView.swift */; };
-		5C75875A1B1D01DA6CC75C9B /* GitCore in Frameworks */ = {isa = PBXBuildFile; productRef = 579A254CA749B06D39964FD0 /* GitCore */; };
-		5D760E23EE044AD90C51BBFA /* FolderCore in Frameworks */ = {isa = PBXBuildFile; productRef = 89368620C01A821B2FE33F2F /* FolderCore */; };
+		54EC4228D50C963546B4D263 /* SyntaxColoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DF08C7B72AC68446F30FF9 /* SyntaxColoring.swift */; };
+		5C2E7013E385AC87CDAD961F /* DiffCore in Frameworks */ = {isa = PBXBuildFile; productRef = DADBDA36FCDED340E3CAFB03 /* DiffCore */; };
+		5C75875A1B1D01DA6CC75C9B /* SyntaxCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6522BCE97FDD98F4C026362E /* SyntaxCore */; };
+		5D760E23EE044AD90C51BBFA /* GitCore in Frameworks */ = {isa = PBXBuildFile; productRef = 579A254CA749B06D39964FD0 /* GitCore */; };
 		60A2904C8787E2EEA777B7C0 /* MergeComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1E47BBE24D46A876980B6C /* MergeComparisonView.swift */; };
+		60F9F96C2F181A872963B98B /* VellographCompareAction.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 21598FC2B7BFC19FC2397EDB /* VellographCompareAction.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		769D345D0ACB6CAD2DC9E60D /* IPCBridge in Frameworks */ = {isa = PBXBuildFile; productRef = 4109012340CE996C308FF930 /* IPCBridge */; };
 		773DDA1B578B76DF31E1D2ED /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 090AF20BFF75BF8F0DB49992 /* WorkspaceView.swift */; };
 		7BD027A6C61FE7D86B0B52A1 /* TextComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6915230922B0C59B00AEEDD3 /* TextComparisonView.swift */; };
 		98D5D13F6018DC61CB665D52 /* WorkspaceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F46BEB226F22AC4985BBD5A /* WorkspaceModel.swift */; };
+		9934C5C29ED36D857E1A09F9 /* vellograph in Resources */ = {isa = PBXBuildFile; fileRef = 556A21BAD7B4D1BB34C9ACBE /* vellograph */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9C3031A26C18AACB47C687DA /* CompareActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F3A969F1656451C8A7A6584 /* CompareActionViewController.swift */; };
+		AEEBA5A50A13995FAFCECB00 /* FolderCore in Frameworks */ = {isa = PBXBuildFile; productRef = 45CE6CEEBD3C8EC6E631D165 /* FolderCore */; };
+		BB61442DEAE066EA8AA203FD /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4980C7AE30E72CD908A54DB5 /* main.swift */; };
+		BDA1C06A0CE1EEC3995F2D78 /* VellographServiceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E39E156FF71C6637C472F85 /* VellographServiceProvider.swift */; };
+		BEBC5390C68A816A12DF1504 /* MetadataComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21B50589875E1B4AE52679A4 /* MetadataComparisonView.swift */; };
 		C3D05A0E5326FB8E58F8B373 /* VellographApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BDB4669A4B412824BBFAD0F /* VellographApp.swift */; };
+		CA3402338E3D39E969D0F21E /* VellographCompareShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4FFB7BA299C89EA97C6232D0 /* VellographCompareShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CE9A52E50599605A01CCE7C2 /* GitWholeFileConflictView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7F12B1D086847A7B754D9C /* GitWholeFileConflictView.swift */; };
+		D5E16BEE4299F519F110CBA8 /* FolderCore in Frameworks */ = {isa = PBXBuildFile; productRef = 97EB3CC61DD5223B719E259F /* FolderCore */; };
+		D841AB72176D3DED1396F7AD /* ImageCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7B384F708B65A94F5952BA19 /* ImageCore */; };
+		E170DAFEEA3DB6D4CD5BA46F /* VellographUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E14A1C80C1AF3CD124903BC7 /* VellographUITests.swift */; };
+		E3CFC6E328A675A83436E2B5 /* TextPrintExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0696DF3F1100BDD2772907B8 /* TextPrintExport.swift */; };
+		E7602938C9C873CED0818688 /* VirtualTextComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6377BD8C8DD819CBD72394C8 /* VirtualTextComparisonView.swift */; };
+		E9A19D95A5B093B069E7A434 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = FF2DA6EC61B4EB07FD74455F /* Sparkle */; };
+		F5DBAF3BEDF3B4CE136C624D /* FileTreeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 405F582D9A84135FD276DC18 /* FileTreeMonitor.swift */; };
 		F6929E04861F81820B6718A9 /* ImageComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3C2AFD9D6BE40FCD1FEC158 /* ImageComparisonView.swift */; };
+		FBEB9F441D8B6E3A5DAD8D1F /* DiffCore in Frameworks */ = {isa = PBXBuildFile; productRef = ADB59B437B55EA90DB3B1922 /* DiffCore */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		5F29A19B729777F2825ECE15 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83028C75431BAEC581267A5D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7BC3241405251252B2E3013A;
+			remoteInfo = VellographCompareAction;
+		};
+		8B6C3FACA2A18F1045704F45 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83028C75431BAEC581267A5D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9FA411912D9C6177BFA5BF8B;
+			remoteInfo = VellographCompareShare;
+		};
+		8EB0A4F29E113E5185753BEC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83028C75431BAEC581267A5D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 538D3C201ED18245BB6DCCA6;
+			remoteInfo = Vellograph;
+		};
+		8F5EAB76BA74955D8F93F863 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83028C75431BAEC581267A5D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 73CE1CBFC646DE37F2A97708;
+			remoteInfo = VellographCLI;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9C7A3F2A192D23A9CA775339 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CA3402338E3D39E969D0F21E /* VellographCompareShare.appex in Embed Foundation Extensions */,
+				60F9F96C2F181A872963B98B /* VellographCompareAction.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		01B39FA9A0CE419419D9A824 /* ShortcutsIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsIntents.swift; sourceTree = "<group>"; };
+		0696DF3F1100BDD2772907B8 /* TextPrintExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextPrintExport.swift; sourceTree = "<group>"; };
 		090AF20BFF75BF8F0DB49992 /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
+		1028AFB8C616ADD8D0896B3A /* MenuBarDropView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarDropView.swift; sourceTree = "<group>"; };
+		1E39E156FF71C6637C472F85 /* VellographServiceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VellographServiceProvider.swift; sourceTree = "<group>"; };
+		21598FC2B7BFC19FC2397EDB /* VellographCompareAction.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VellographCompareAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		21B50589875E1B4AE52679A4 /* MetadataComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataComparisonView.swift; sourceTree = "<group>"; };
+		405F582D9A84135FD276DC18 /* FileTreeMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTreeMonitor.swift; sourceTree = "<group>"; };
+		411B7BE3C6D6A67E794CA936 /* CompareAction.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CompareAction.entitlements; sourceTree = "<group>"; };
+		4980C7AE30E72CD908A54DB5 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		4F7F12B1D086847A7B754D9C /* GitWholeFileConflictView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitWholeFileConflictView.swift; sourceTree = "<group>"; };
+		4FFB7BA299C89EA97C6232D0 /* VellographCompareShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VellographCompareShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		556A21BAD7B4D1BB34C9ACBE /* vellograph */ = {isa = PBXFileReference; includeInIndex = 0; path = vellograph; sourceTree = BUILT_PRODUCTS_DIR; };
+		6377BD8C8DD819CBD72394C8 /* VirtualTextComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualTextComparisonView.swift; sourceTree = "<group>"; };
 		6915230922B0C59B00AEEDD3 /* TextComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextComparisonView.swift; sourceTree = "<group>"; };
 		6BDB4669A4B412824BBFAD0F /* VellographApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VellographApp.swift; sourceTree = "<group>"; };
 		72AF75D46B8FF13BD079C6E7 /* FolderComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderComparisonView.swift; sourceTree = "<group>"; };
 		7A1E47BBE24D46A876980B6C /* MergeComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergeComparisonView.swift; sourceTree = "<group>"; };
+		83DF08C7B72AC68446F30FF9 /* SyntaxColoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxColoring.swift; sourceTree = "<group>"; };
+		8F3A969F1656451C8A7A6584 /* CompareActionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompareActionViewController.swift; sourceTree = "<group>"; };
+		967FEAA2C40B0AC6AF6B9FF6 /* VellographUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VellographUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9BF10A9A5AE7B89A73FC7971 /* TextResolutionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextResolutionView.swift; sourceTree = "<group>"; };
 		9F46BEB226F22AC4985BBD5A /* WorkspaceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceModel.swift; sourceTree = "<group>"; };
+		A380BDD3E363DDFC6A9E86F6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A6B0006A4716C1EC8EA92F6B /* RepositoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryView.swift; sourceTree = "<group>"; };
 		AEFEC63F6EFC386170042884 /* vellograph */ = {isa = PBXFileReference; lastKnownFileType = folder; name = vellograph; path = .; sourceTree = SOURCE_ROOT; };
+		C98453D64A4D5D80B9B50756 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
 		D6ECD86406C39516580E042E /* Vellograph.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Vellograph.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DCC5ABEB15A75312F50EE637 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E14A1C80C1AF3CD124903BC7 /* VellographUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VellographUITests.swift; sourceTree = "<group>"; };
 		E3C2AFD9D6BE40FCD1FEC158 /* ImageComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageComparisonView.swift; sourceTree = "<group>"; };
+		FD68E473457030C5D6CEE7A3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		190BEF544E3B5971FA33B137 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FBEB9F441D8B6E3A5DAD8D1F /* DiffCore in Frameworks */,
+				AEEBA5A50A13995FAFCECB00 /* FolderCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4FB3A434EB4317E1377CC844 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5C2E7013E385AC87CDAD961F /* DiffCore in Frameworks */,
+				D5E16BEE4299F519F110CBA8 /* FolderCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8785D8E0BF3CF12166BEF371 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				207B7C43ADF372D9192AB045 /* GitCore in Frameworks */,
+				4D7830A157E65448FE71A09F /* IPCBridge in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A01066A736171F6378F64FB5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				24324F0FEC32E9C1A13F1833 /* DiffCore in Frameworks */,
-				5C75875A1B1D01DA6CC75C9B /* GitCore in Frameworks */,
-				5D760E23EE044AD90C51BBFA /* FolderCore in Frameworks */,
-				43FD5A5CD566D07E08051404 /* Sparkle in Frameworks */,
+				5C75875A1B1D01DA6CC75C9B /* SyntaxCore in Frameworks */,
+				5D760E23EE044AD90C51BBFA /* GitCore in Frameworks */,
+				43FD5A5CD566D07E08051404 /* FolderCore in Frameworks */,
+				0AB939071A1AA7F11E704AEF /* DocumentCore in Frameworks */,
+				D841AB72176D3DED1396F7AD /* ImageCore in Frameworks */,
+				769D345D0ACB6CAD2DC9E60D /* IPCBridge in Frameworks */,
+				E9A19D95A5B093B069E7A434 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,26 +180,61 @@
 		165E782522AA2C565D753B9A /* App */ = {
 			isa = PBXGroup;
 			children = (
+				FD68E473457030C5D6CEE7A3 /* Assets.xcassets */,
+				405F582D9A84135FD276DC18 /* FileTreeMonitor.swift */,
 				72AF75D46B8FF13BD079C6E7 /* FolderComparisonView.swift */,
+				4F7F12B1D086847A7B754D9C /* GitWholeFileConflictView.swift */,
 				E3C2AFD9D6BE40FCD1FEC158 /* ImageComparisonView.swift */,
 				DCC5ABEB15A75312F50EE637 /* Info.plist */,
+				C98453D64A4D5D80B9B50756 /* MenuBarController.swift */,
+				1028AFB8C616ADD8D0896B3A /* MenuBarDropView.swift */,
 				7A1E47BBE24D46A876980B6C /* MergeComparisonView.swift */,
+				21B50589875E1B4AE52679A4 /* MetadataComparisonView.swift */,
 				A6B0006A4716C1EC8EA92F6B /* RepositoryView.swift */,
+				01B39FA9A0CE419419D9A824 /* ShortcutsIntents.swift */,
+				83DF08C7B72AC68446F30FF9 /* SyntaxColoring.swift */,
 				6915230922B0C59B00AEEDD3 /* TextComparisonView.swift */,
+				0696DF3F1100BDD2772907B8 /* TextPrintExport.swift */,
+				9BF10A9A5AE7B89A73FC7971 /* TextResolutionView.swift */,
 				6BDB4669A4B412824BBFAD0F /* VellographApp.swift */,
+				1E39E156FF71C6637C472F85 /* VellographServiceProvider.swift */,
+				6377BD8C8DD819CBD72394C8 /* VirtualTextComparisonView.swift */,
 				9F46BEB226F22AC4985BBD5A /* WorkspaceModel.swift */,
 				090AF20BFF75BF8F0DB49992 /* WorkspaceView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
 		};
+		28264585BF17D0E7F6047F88 /* CompareAction */ = {
+			isa = PBXGroup;
+			children = (
+				411B7BE3C6D6A67E794CA936 /* CompareAction.entitlements */,
+				8F3A969F1656451C8A7A6584 /* CompareActionViewController.swift */,
+				A380BDD3E363DDFC6A9E86F6 /* Info.plist */,
+			);
+			name = CompareAction;
+			path = Extensions/CompareAction;
+			sourceTree = "<group>";
+		};
 		3C2B1ABD22EF21AC4A39A020 = {
 			isa = PBXGroup;
 			children = (
 				165E782522AA2C565D753B9A /* App */,
+				28264585BF17D0E7F6047F88 /* CompareAction */,
 				C0F044238F2DDAD28180B28F /* Packages */,
+				BE53E3BD6044C8F1C16B4D5A /* VellographCLI */,
+				FBD39D0DF9192328A366C9BC /* VellographUITests */,
 				E9DC5096A0BEEE64861E3D49 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		BE53E3BD6044C8F1C16B4D5A /* VellographCLI */ = {
+			isa = PBXGroup;
+			children = (
+				4980C7AE30E72CD908A54DB5 /* main.swift */,
+			);
+			name = VellographCLI;
+			path = Sources/VellographCLI;
 			sourceTree = "<group>";
 		};
 		C0F044238F2DDAD28180B28F /* Packages */ = {
@@ -86,9 +248,22 @@
 		E9DC5096A0BEEE64861E3D49 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				556A21BAD7B4D1BB34C9ACBE /* vellograph */,
 				D6ECD86406C39516580E042E /* Vellograph.app */,
+				21598FC2B7BFC19FC2397EDB /* VellographCompareAction.appex */,
+				4FFB7BA299C89EA97C6232D0 /* VellographCompareShare.appex */,
+				967FEAA2C40B0AC6AF6B9FF6 /* VellographUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		FBD39D0DF9192328A366C9BC /* VellographUITests */ = {
+			isa = PBXGroup;
+			children = (
+				E14A1C80C1AF3CD124903BC7 /* VellographUITests.swift */,
+			);
+			name = VellographUITests;
+			path = Tests/VellographUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -99,22 +274,110 @@
 			buildConfigurationList = 79758D9534FED9B0AC8AF584 /* Build configuration list for PBXNativeTarget "Vellograph" */;
 			buildPhases = (
 				41C030FDEB8A3BA6C443E4A7 /* Sources */,
+				FCD8728F5323DD518A9DB75C /* Resources */,
 				A01066A736171F6378F64FB5 /* Frameworks */,
+				9C7A3F2A192D23A9CA775339 /* Embed Foundation Extensions */,
+				873E9256EB985121A767D9C8 /* Embed Vellograph CLI */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				153E01A7B03EB8E1110D6C70 /* PBXTargetDependency */,
+				DCE30C6C3325B61DEC08C3B5 /* PBXTargetDependency */,
+				815D31A5A181D2E2DF2E3B34 /* PBXTargetDependency */,
 			);
 			name = Vellograph;
 			packageProductDependencies = (
 				6E289D6B8401B8F9B2E4C9B2 /* DiffCore */,
+				6522BCE97FDD98F4C026362E /* SyntaxCore */,
 				579A254CA749B06D39964FD0 /* GitCore */,
 				89368620C01A821B2FE33F2F /* FolderCore */,
+				9FB99FD149EE04A2B92C6BC0 /* DocumentCore */,
+				7B384F708B65A94F5952BA19 /* ImageCore */,
+				4109012340CE996C308FF930 /* IPCBridge */,
 				FF2DA6EC61B4EB07FD74455F /* Sparkle */,
 			);
 			productName = Vellograph;
 			productReference = D6ECD86406C39516580E042E /* Vellograph.app */;
 			productType = "com.apple.product-type.application";
+		};
+		73CE1CBFC646DE37F2A97708 /* VellographCLI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EC070F8416FAB9959EA33B95 /* Build configuration list for PBXNativeTarget "VellographCLI" */;
+			buildPhases = (
+				5706BF456AF04F3742A69A76 /* Sources */,
+				8785D8E0BF3CF12166BEF371 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VellographCLI;
+			packageProductDependencies = (
+				FEF4CC51D9AFD977AD8D06C1 /* GitCore */,
+				E0A4EF251C5F4D4E03CBFD49 /* IPCBridge */,
+			);
+			productName = VellographCLI;
+			productReference = 556A21BAD7B4D1BB34C9ACBE /* vellograph */;
+			productType = "com.apple.product-type.tool";
+		};
+		763966BFC721F0739754E2F5 /* VellographUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A761E1DEE0E43C46A117D0A /* Build configuration list for PBXNativeTarget "VellographUITests" */;
+			buildPhases = (
+				3B0D3B358F01FE5B22BBDE58 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				40025001DF5D098DC0CBD13E /* PBXTargetDependency */,
+			);
+			name = VellographUITests;
+			packageProductDependencies = (
+			);
+			productName = VellographUITests;
+			productReference = 967FEAA2C40B0AC6AF6B9FF6 /* VellographUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		7BC3241405251252B2E3013A /* VellographCompareAction */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4205B859E2054E894349A8E7 /* Build configuration list for PBXNativeTarget "VellographCompareAction" */;
+			buildPhases = (
+				B18FEBD22746652509B42763 /* Sources */,
+				190BEF544E3B5971FA33B137 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VellographCompareAction;
+			packageProductDependencies = (
+				ADB59B437B55EA90DB3B1922 /* DiffCore */,
+				45CE6CEEBD3C8EC6E631D165 /* FolderCore */,
+			);
+			productName = VellographCompareAction;
+			productReference = 21598FC2B7BFC19FC2397EDB /* VellographCompareAction.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		9FA411912D9C6177BFA5BF8B /* VellographCompareShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1722A84872053A04779C913B /* Build configuration list for PBXNativeTarget "VellographCompareShare" */;
+			buildPhases = (
+				42BF54D924E6E0F59C3AF0DE /* Sources */,
+				4FB3A434EB4317E1377CC844 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VellographCompareShare;
+			packageProductDependencies = (
+				DADBDA36FCDED340E3CAFB03 /* DiffCore */,
+				97EB3CC61DD5223B719E259F /* FolderCore */,
+			);
+			productName = VellographCompareShare;
+			productReference = 4FFB7BA299C89EA97C6232D0 /* VellographCompareShare.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -125,6 +388,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					763966BFC721F0739754E2F5 = {
+						TestTargetID = 538D3C201ED18245BB6DCCA6;
+					};
 				};
 			};
 			buildConfigurationList = 15A6159AC1C947D0E1CEA487 /* Build configuration list for PBXProject "Vellograph" */;
@@ -145,30 +411,200 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				763966BFC721F0739754E2F5 /* VellographUITests */,
+				9FA411912D9C6177BFA5BF8B /* VellographCompareShare */,
+				7BC3241405251252B2E3013A /* VellographCompareAction */,
+				73CE1CBFC646DE37F2A97708 /* VellographCLI */,
 				538D3C201ED18245BB6DCCA6 /* Vellograph */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		FCD8728F5323DD518A9DB75C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4DBEB6F89B9F8EA34C7E2322 /* Assets.xcassets in Resources */,
+				9934C5C29ED36D857E1A09F9 /* vellograph in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		873E9256EB985121A767D9C8 /* Embed Vellograph CLI */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed Vellograph CLI";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\ncli_dir=\"${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Helpers\"\nmkdir -p \"$cli_dir\"\ninstall -m 755 \"${BUILT_PRODUCTS_DIR}/vellograph\" \"$cli_dir/vellograph\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
+		3B0D3B358F01FE5B22BBDE58 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E170DAFEEA3DB6D4CD5BA46F /* VellographUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		41C030FDEB8A3BA6C443E4A7 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F5DBAF3BEDF3B4CE136C624D /* FileTreeMonitor.swift in Sources */,
 				4F362CA96C2C7A99EE743986 /* FolderComparisonView.swift in Sources */,
+				CE9A52E50599605A01CCE7C2 /* GitWholeFileConflictView.swift in Sources */,
 				F6929E04861F81820B6718A9 /* ImageComparisonView.swift in Sources */,
+				3665DE7DCF43CFC6430E1375 /* MenuBarController.swift in Sources */,
+				1176D847E929631999CA7858 /* MenuBarDropView.swift in Sources */,
 				60A2904C8787E2EEA777B7C0 /* MergeComparisonView.swift in Sources */,
+				BEBC5390C68A816A12DF1504 /* MetadataComparisonView.swift in Sources */,
 				2541229C5F7A37073B768AF7 /* RepositoryView.swift in Sources */,
+				194DC659D8A3B4AD4E8DB5D4 /* ShortcutsIntents.swift in Sources */,
+				54EC4228D50C963546B4D263 /* SyntaxColoring.swift in Sources */,
 				7BD027A6C61FE7D86B0B52A1 /* TextComparisonView.swift in Sources */,
+				E3CFC6E328A675A83436E2B5 /* TextPrintExport.swift in Sources */,
+				4A634057E1DE547D44CCCA9B /* TextResolutionView.swift in Sources */,
 				C3D05A0E5326FB8E58F8B373 /* VellographApp.swift in Sources */,
+				BDA1C06A0CE1EEC3995F2D78 /* VellographServiceProvider.swift in Sources */,
+				E7602938C9C873CED0818688 /* VirtualTextComparisonView.swift in Sources */,
 				98D5D13F6018DC61CB665D52 /* WorkspaceModel.swift in Sources */,
 				773DDA1B578B76DF31E1D2ED /* WorkspaceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		42BF54D924E6E0F59C3AF0DE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				21D6C97AC74E0E12138FC2C7 /* CompareActionViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5706BF456AF04F3742A69A76 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB61442DEAE066EA8AA203FD /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B18FEBD22746652509B42763 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9C3031A26C18AACB47C687DA /* CompareActionViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		153E01A7B03EB8E1110D6C70 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9FA411912D9C6177BFA5BF8B /* VellographCompareShare */;
+			targetProxy = 8B6C3FACA2A18F1045704F45 /* PBXContainerItemProxy */;
+		};
+		40025001DF5D098DC0CBD13E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 538D3C201ED18245BB6DCCA6 /* Vellograph */;
+			targetProxy = 8EB0A4F29E113E5185753BEC /* PBXContainerItemProxy */;
+		};
+		815D31A5A181D2E2DF2E3B34 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 73CE1CBFC646DE37F2A97708 /* VellographCLI */;
+			targetProxy = 8F5EAB76BA74955D8F93F863 /* PBXContainerItemProxy */;
+		};
+		DCE30C6C3325B61DEC08C3B5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7BC3241405251252B2E3013A /* VellographCompareAction */;
+			targetProxy = 5F29A19B729777F2825ECE15 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		16BE2D0FA762BD7C1EF0E385 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.michaeldadi.VellographCLI;
+				PRODUCT_NAME = vellograph;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		1B558EFFDE6B9E588F7DE960 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Extensions/CompareAction/CompareAction.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Extensions/CompareShare/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.michaeldadi.vellograph.compare-share";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		5E24300CB560BB4CF4A9B32F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Extensions/CompareAction/CompareAction.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Extensions/CompareAction/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.michaeldadi.vellograph.compare-action";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		77C701444CC66B095A8686E6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.michaeldadi.VellographUITests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = Vellograph;
+			};
+			name = Release;
+		};
 		79C5E188BB37E95A5768B12F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -244,6 +680,40 @@
 			};
 			name = Release;
 		};
+		8853883D8E631F3918DD6DE5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.michaeldadi.VellographUITests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = Vellograph;
+			};
+			name = Debug;
+		};
+		A77A9D39F1125B336ED32063 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Extensions/CompareAction/CompareAction.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Extensions/CompareShare/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.michaeldadi.vellograph.compare-share";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
 		C2E193F09DADF1F32AD2AC66 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -256,6 +726,23 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.michaeldadi.vellograph;
 				PRODUCT_NAME = Vellograph;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		CFFA690E64010C1BF19B9CB5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Extensions/CompareAction/CompareAction.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Extensions/CompareAction/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.michaeldadi.vellograph.compare-action";
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -326,9 +813,32 @@
 			};
 			name = Debug;
 		};
+		F8487B30A975835751218717 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.michaeldadi.VellographCLI;
+				PRODUCT_NAME = vellograph;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0A761E1DEE0E43C46A117D0A /* Build configuration list for PBXNativeTarget "VellographUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8853883D8E631F3918DD6DE5 /* Debug */,
+				77C701444CC66B095A8686E6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		15A6159AC1C947D0E1CEA487 /* Build configuration list for PBXProject "Vellograph" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -338,11 +848,38 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		1722A84872053A04779C913B /* Build configuration list for PBXNativeTarget "VellographCompareShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A77A9D39F1125B336ED32063 /* Debug */,
+				1B558EFFDE6B9E588F7DE960 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4205B859E2054E894349A8E7 /* Build configuration list for PBXNativeTarget "VellographCompareAction" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFFA690E64010C1BF19B9CB5 /* Debug */,
+				5E24300CB560BB4CF4A9B32F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		79758D9534FED9B0AC8AF584 /* Build configuration list for PBXNativeTarget "Vellograph" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C2E193F09DADF1F32AD2AC66 /* Debug */,
 				79C5E188BB37E95A5768B12F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		EC070F8416FAB9959EA33B95 /* Build configuration list for PBXNativeTarget "VellographCLI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F8487B30A975835751218717 /* Debug */,
+				16BE2D0FA762BD7C1EF0E385 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -368,17 +905,57 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		4109012340CE996C308FF930 /* IPCBridge */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = IPCBridge;
+		};
+		45CE6CEEBD3C8EC6E631D165 /* FolderCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FolderCore;
+		};
 		579A254CA749B06D39964FD0 /* GitCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = GitCore;
+		};
+		6522BCE97FDD98F4C026362E /* SyntaxCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SyntaxCore;
 		};
 		6E289D6B8401B8F9B2E4C9B2 /* DiffCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = DiffCore;
 		};
+		7B384F708B65A94F5952BA19 /* ImageCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ImageCore;
+		};
 		89368620C01A821B2FE33F2F /* FolderCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FolderCore;
+		};
+		97EB3CC61DD5223B719E259F /* FolderCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FolderCore;
+		};
+		9FB99FD149EE04A2B92C6BC0 /* DocumentCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DocumentCore;
+		};
+		ADB59B437B55EA90DB3B1922 /* DiffCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DiffCore;
+		};
+		DADBDA36FCDED340E3CAFB03 /* DiffCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DiffCore;
+		};
+		E0A4EF251C5F4D4E03CBFD49 /* IPCBridge */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = IPCBridge;
+		};
+		FEF4CC51D9AFD977AD8D06C1 /* GitCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GitCore;
 		};
 		FF2DA6EC61B4EB07FD74455F /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -18,6 +18,91 @@ settings:
     MACOSX_DEPLOYMENT_TARGET: "27.0"
     GENERATE_INFOPLIST_FILE: NO
 targets:
+  VellographUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: Tests/VellographUITests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Vellograph
+  VellographCompareShare:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Extensions/CompareAction/CompareActionViewController.swift
+    info:
+      path: Extensions/CompareShare/Info.plist
+      properties:
+        CFBundleDisplayName: Compare with Vellograph
+        CFBundleShortVersionString: "0.2.1"
+        CFBundleVersion: "4"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CompareActionViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsFileWithMaxCount: 2
+              NSExtensionActivationSupportsImageWithMaxCount: 2
+              NSExtensionActivationSupportsText: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.michaeldadi.vellograph.compare-share
+        APPLICATION_EXTENSION_API_ONLY: YES
+        CODE_SIGN_ENTITLEMENTS: Extensions/CompareAction/CompareAction.entitlements
+    dependencies:
+      - package: VellographCore
+        product: DiffCore
+      - package: VellographCore
+        product: FolderCore
+  VellographCompareAction:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Extensions/CompareAction
+    info:
+      path: Extensions/CompareAction/Info.plist
+      properties:
+        CFBundleDisplayName: Compare with Vellograph
+        CFBundleShortVersionString: "0.2.1"
+        CFBundleVersion: "4"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ui-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CompareActionViewController
+          NSExtensionAttributes:
+            NSExtensionServiceRoleType: NSExtensionServiceRoleTypeViewer
+            NSExtensionServiceAllowsFinderPreviewItem: true
+            NSExtensionServiceFinderPreviewLabel: Compare with Vellograph
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsFileWithMaxCount: 2
+              NSExtensionActivationSupportsImageWithMaxCount: 2
+              NSExtensionActivationSupportsText: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.michaeldadi.vellograph.compare-action
+        APPLICATION_EXTENSION_API_ONLY: YES
+        CODE_SIGN_ENTITLEMENTS: Extensions/CompareAction/CompareAction.entitlements
+    dependencies:
+      - package: VellographCore
+        product: DiffCore
+      - package: VellographCore
+        product: FolderCore
+  VellographCLI:
+    type: tool
+    platform: macOS
+    productName: vellograph
+    sources:
+      - path: Sources/VellographCLI
+    settings:
+      base:
+        PRODUCT_NAME: vellograph
+    dependencies:
+      - package: VellographCore
+        product: GitCore
+      - package: VellographCore
+        product: IPCBridge
   Vellograph:
     type: application
     platform: macOS
@@ -30,8 +115,18 @@ targets:
         CFBundleShortVersionString: "0.2.1"
         CFBundleVersion: "4"
         LSApplicationCategoryType: public.app-category.developer-tools
+        NSServices:
+          - NSMenuItem:
+              default: Compare with Vellograph
+            NSMessage: compareFiles
+            NSPortName: Vellograph
+            NSRequiredContext: {}
+            NSSendFileTypes:
+              - public.item
         SUFeedURL: https://michaeldadi.github.io/vellograph/appcast.xml
         SUPublicEDKey: VSfGne1/1drahXuPUd0BdomB2P/sUNppRjTtKihb0+8=
+        SUVerifyUpdateBeforeExtraction: true
+        SURequireSignedFeed: true
         SUEnableAutomaticChecks: true
         SUAllowsAutomaticUpdates: true
         CFBundleURLTypes:
@@ -43,14 +138,36 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.michaeldadi.vellograph
         PRODUCT_NAME: Vellograph
         INFOPLIST_FILE: App/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
+      - target: VellographCompareShare
+      - target: VellographCompareAction
+      - target: VellographCLI
       - package: VellographCore
         product: DiffCore
+      - package: VellographCore
+        product: SyntaxCore
       - package: VellographCore
         product: GitCore
       - package: VellographCore
         product: FolderCore
+      - package: VellographCore
+        product: DocumentCore
+      - package: VellographCore
+        product: ImageCore
+      - package: VellographCore
+        product: IPCBridge
       - package: Sparkle
+    postBuildScripts:
+      - name: Embed Vellograph CLI
+        basedOnDependencyAnalysis: false
+        showEnvVars: false
+        script: |
+          set -eu
+          cli_dir="${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Helpers"
+          mkdir -p "$cli_dir"
+          install -m 755 "${BUILT_PRODUCTS_DIR}/vellograph" "$cli_dir/vellograph"
     scheme:
-      testTargets: []
+      testTargets:
+        - VellographUITests
 

@@ -4,6 +4,7 @@ import SwiftUI
 
 struct MergeComparisonView: View {
     let comparison: TextMergeComparison
+    let onSaved: (URL) -> Void
     @State private var roleIndices = [0, 1, 2]
     @State private var rolesConfirmed = false
     @State private var isComputing = false
@@ -21,7 +22,7 @@ struct MergeComparisonView: View {
                     .font(.headline)
                 Spacer()
                 if let mergeResult {
-                    Text("\(choices.count) of \(mergeResult.conflicts.count) conflicts resolved")
+                    Text("\(choices.count) of \(mergeResult.conflicts.count) \(mergeResult.conflicts.count == 1 ? "conflict" : "conflicts") resolved")
                         .foregroundStyle(.secondary)
                 }
             }
@@ -33,6 +34,37 @@ struct MergeComparisonView: View {
                 sourcePicker("Remote", role: 2)
             }
             .padding(12)
+            if comparison.isGitConflict {
+                Text("Saving the resolution updates the working file. Stage it with Git after reviewing the result.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+            }
+            if rolesConfirmed && mergeResult?.conflicts.isEmpty == false && output == nil {
+                HStack {
+                    Text("Next conflict: \((nextUnresolvedConflictID ?? 0) + 1)")
+                        .foregroundStyle(.secondary)
+                    Button("Local") { chooseNext(.ours) }
+                        .keyboardShortcut("1", modifiers: [.command])
+                        .accessibilityLabel("Use Local for next unresolved conflict")
+                    Button("Remote") { chooseNext(.theirs) }
+                        .keyboardShortcut("2", modifiers: [.command])
+                        .accessibilityLabel("Use Remote for next unresolved conflict")
+                    Button("Both") { chooseNext(.both) }
+                        .keyboardShortcut("3", modifiers: [.command])
+                        .accessibilityLabel("Use Both for next unresolved conflict")
+                    Button("Neither") { chooseNext(.neither) }
+                        .keyboardShortcut("4", modifiers: [.command])
+                        .accessibilityLabel("Use Neither for next unresolved conflict")
+                    Spacer()
+                    Text("⌘1–4 · ⌘⇧↩ Build")
+                        .foregroundStyle(.secondary)
+                }
+                .font(.caption)
+                .disabled(nextUnresolvedConflictID == nil)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+            }
             Divider()
             if isComputing {
                 ProgressView("Comparing three sources…")
@@ -52,9 +84,9 @@ struct MergeComparisonView: View {
                 }
             }
             Divider()
-            if let output {
+            if output != nil {
                 TextEditor(text: Binding(
-                    get: { output },
+                    get: { self.output ?? "" },
                     set: { self.output = $0 }
                 ))
                 .font(.system(.body, design: .monospaced))
@@ -77,19 +109,23 @@ struct MergeComparisonView: View {
                     Button("Confirm Roles") { confirmRoles() }
                         .disabled(isComputing)
                 } else if output == nil {
-                    Button("Change Roles") {
-                        rolesConfirmed = false
-                        mergeResult = nil
-                        choices = [:]
+                    if comparison.outputURL == nil {
+                        Button("Change Roles") {
+                            rolesConfirmed = false
+                            mergeResult = nil
+                            choices = [:]
+                        }
                     }
                     Button("Build Output") { buildOutput() }
                         .disabled(mergeResult == nil || choices.count != mergeResult?.conflicts.count)
+                        .keyboardShortcut(.return, modifiers: [.command, .shift])
                 } else {
                     if mergeResult?.conflicts.isEmpty == false {
                         Button("Change Choices…") { showingChangeChoices = true }
                     }
-                    Button("Save As…") { saveOutput() }
+                    Button(comparison.outputURL == nil ? "Save As…" : "Save Output") { saveOutput() }
                         .keyboardShortcut("s", modifiers: [.command])
+                        .help(comparison.outputURL?.path ?? "Choose an output file")
                 }
             }
             .padding(12)
@@ -109,6 +145,9 @@ struct MergeComparisonView: View {
             }
             Button("Keep Output", role: .cancel) {}
         }
+        .task {
+            if comparison.outputURL != nil && !rolesConfirmed { confirmRoles() }
+        }
     }
 
     private func sourcePicker(_ title: String, role: Int) -> some View {
@@ -123,10 +162,11 @@ struct MergeComparisonView: View {
                 }
             )) {
                 ForEach(comparison.sources.indices, id: \.self) { index in
-                    Text(comparison.sources[index].lastPathComponent).tag(index)
+                    Text(comparison.sourceLabels[index]).tag(index)
                 }
             }
-            .disabled(rolesConfirmed || isComputing || output != nil)
+            .disabled(comparison.outputURL != nil || rolesConfirmed || isComputing || output != nil)
+            .accessibilityLabel("\(title) source")
             Text(comparison.sources[roleIndices[role]].path)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -199,6 +239,15 @@ struct MergeComparisonView: View {
         .disabled(output != nil)
     }
 
+    private var nextUnresolvedConflictID: Int? {
+        mergeResult?.conflicts.first(where: { choices[$0.id] == nil })?.id
+    }
+
+    private func chooseNext(_ choice: MergeChoice) {
+        guard output == nil, let id = nextUnresolvedConflictID else { return }
+        choices[id] = choice
+    }
+
     private func buildOutput() {
         guard let mergeResult else { return }
         do {
@@ -210,21 +259,38 @@ struct MergeComparisonView: View {
 
     private func saveOutput() {
         guard let output else { return }
-        let panel = NSSavePanel()
-        panel.nameFieldStringValue = comparison.sources[roleIndices[1]].lastPathComponent + ".merged"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        if comparison.sources.contains(where: { $0.standardizedFileURL == url.standardizedFileURL }) {
+        let url: URL
+        if let destination = comparison.outputURL {
+            url = destination
+        } else {
+            let panel = NSSavePanel()
+            panel.nameFieldStringValue = comparison.sources[roleIndices[1]].lastPathComponent + ".merged"
+            panel.directoryURL = comparison.sources[roleIndices[1]].deletingLastPathComponent()
+            guard panel.runModal() == .OK, let selected = panel.url else { return }
+            url = selected
+        }
+        if comparison.outputURL == nil &&
+            comparison.sources.contains(where: { $0.standardizedFileURL == url.standardizedFileURL }) {
             errorMessage = "Choose a separate output file to preserve the three inputs."
             return
         }
         do {
             let snapshot = try TextSnapshot(
                 text: output,
-                encoding: comparison.snapshots[roleIndices[0]].encoding,
-                hasByteOrderMark: comparison.snapshots[roleIndices[0]].hasByteOrderMark
+                encoding: comparison.snapshots[roleIndices[1]].encoding,
+                hasByteOrderMark: comparison.snapshots[roleIndices[1]].hasByteOrderMark
             )
-            try snapshot.originalData.write(to: url, options: .atomic)
+            if let expected = comparison.outputURL == nil
+                ? (FileManager.default.fileExists(atPath: url.path)
+                    ? try Data(contentsOf: url, options: .mappedIfSafe) : nil)
+                : comparison.expectedOutput {
+                _ = try SafeTextWrite.replace(at: url, expected: expected,
+                                              with: snapshot.originalData)
+            } else {
+                try SafeTextWrite.create(at: url, data: snapshot.originalData)
+            }
             savedURL = url
+            onSaved(url)
         } catch {
             errorMessage = error.localizedDescription
         }
