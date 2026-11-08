@@ -44,6 +44,8 @@ public struct FolderAction: Sendable, Identifiable {
 
     let sourceFingerprint: FolderFingerprint?
     let destinationFingerprint: FolderFingerprint?
+    let sourceIdentity: FolderEntryIdentity?
+    let sourceParentIdentity: FolderEntryIdentity?
 }
 
 struct FolderFingerprint: Sendable, Equatable {
@@ -57,7 +59,7 @@ private struct FolderRootIdentity: Sendable, Equatable {
     let inode: UInt64
 }
 
-private struct FolderEntryIdentity: Equatable {
+struct FolderEntryIdentity: Sendable, Equatable {
     let device: UInt64
     let inode: UInt64
 }
@@ -100,11 +102,13 @@ public struct FolderOperationPlan: Sendable {
         from source: URL, to destination: URL, mode: FolderOperationMode,
         selectedPaths: Set<String>, options: FolderOptions
     ) throws -> Self {
-        let source = source.standardizedFileURL
-        let destination = destination.standardizedFileURL
+        let source = source.standardizedFileURL.resolvingSymlinksInPath().standardizedFileURL
+        let destination = destination.standardizedFileURL.resolvingSymlinksInPath().standardizedFileURL
         try validateRoots(source, destination)
         let sourceIdentity = try rootIdentity(source)
         let destinationIdentity = try rootIdentity(destination)
+        let sourceHandle = try FolderDirectoryHandle(
+            url: URL(fileURLWithPath: sourceIdentity.resolvedPath, isDirectory: true))
         let sourceEntries = try FolderComparison.scan(source, options: options)
         let destinationEntries = try FolderComparison.scan(destination, options: options)
         let packages = try packagePaths(in: source, entries: sourceEntries)
@@ -139,6 +143,11 @@ public struct FolderOperationPlan: Sendable {
                                      destinationRoot: destination, path: path)
             let destinationEntry = destinationEntries[path]
             let sourceFingerprint = try fingerprint(sourceEntry)
+            let (sourceParent, sourceName) = try sourceParent(in: sourceHandle, for: path)
+            guard let sourceEntryIdentity = try sourceParent.entryIdentity(sourceName) else {
+                throw FolderOperationError.stalePreview(path)
+            }
+            let sourceParentIdentity = try sourceParent.directoryIdentity()
             let destinationFingerprint = try destinationEntry.map(fingerprint)
             if let destinationEntry, destinationEntry.kind != sourceEntry.kind {
                 throw FolderOperationError.unsupportedItem(path)
@@ -148,18 +157,24 @@ public struct FolderOperationPlan: Sendable {
                     actions.append(FolderAction(path: path, kind: .createDirectory,
                                                 itemKind: .directory,
                                                 sourceFingerprint: sourceFingerprint,
-                                                destinationFingerprint: nil))
+                                                destinationFingerprint: nil,
+                                                sourceIdentity: sourceEntryIdentity,
+                                                sourceParentIdentity: sourceParentIdentity))
                 }
             } else if destinationEntry == nil {
                 actions.append(FolderAction(path: path, kind: .create,
                                             itemKind: sourceEntry.kind,
                                             sourceFingerprint: sourceFingerprint,
-                                            destinationFingerprint: nil))
+                                            destinationFingerprint: nil,
+                                            sourceIdentity: sourceEntryIdentity,
+                                            sourceParentIdentity: sourceParentIdentity))
             } else if sourceFingerprint != destinationFingerprint {
                 actions.append(FolderAction(path: path, kind: .replace,
                                             itemKind: sourceEntry.kind,
                                             sourceFingerprint: sourceFingerprint,
-                                            destinationFingerprint: destinationFingerprint))
+                                            destinationFingerprint: destinationFingerprint,
+                                            sourceIdentity: sourceEntryIdentity,
+                                            sourceParentIdentity: sourceParentIdentity))
             }
         }
         if mode == .clone {
@@ -170,7 +185,8 @@ public struct FolderOperationPlan: Sendable {
                 }
                 actions.append(FolderAction(path: path, kind: .remove,
                                             itemKind: entry.kind, sourceFingerprint: nil,
-                                            destinationFingerprint: try fingerprint(entry)))
+                                            destinationFingerprint: try fingerprint(entry),
+                                            sourceIdentity: nil, sourceParentIdentity: nil))
             }
             // Hidden and ignored descendants are outside the visible clone scope.
             // Keep their containing directories so a preview never implies that
@@ -204,35 +220,55 @@ public struct FolderOperationPlan: Sendable {
     // The hook lets tests exercise a change in the narrow interval between
     // the final fingerprint and the filesystem move.
     func apply(afterFinalTargetCheck: ((FolderAction) throws -> Void)?,
-               afterDestinationOpen: ((FolderAction) throws -> Void)? = nil) throws -> FolderApplyResult {
+               afterDestinationOpen: ((FolderAction) throws -> Void)? = nil,
+               afterSourcePreflight: ((FolderAction) throws -> Void)? = nil) throws -> FolderApplyResult {
         try preflight()
         guard !actions.isEmpty else { return FolderApplyResult(appliedCount: 0, recoveryFolder: nil) }
         let fm = FileManager.default
         let destinationHandle = try FolderDirectoryHandle(
             url: URL(fileURLWithPath: destinationIdentity.resolvedPath, isDirectory: true))
+        let sourceHandle = try FolderDirectoryHandle(
+            url: URL(fileURLWithPath: sourceIdentity.resolvedPath, isDirectory: true))
         guard destinationHandle.identityMatches(destinationIdentity) else {
             throw FolderOperationError.stalePreview("folder root")
         }
+        guard sourceHandle.identityMatches(sourceIdentity) else {
+            throw FolderOperationError.stalePreview("folder root")
+        }
         let identifier = UUID().uuidString
-        let parent = destinationRoot.deletingLastPathComponent()
+        // A selected root may be an alias on another volume. Keep staging and
+        // recovery beside the resolved destination so exclusive renames stay
+        // on the same filesystem as the pinned destination directory.
+        let parent = URL(fileURLWithPath: destinationIdentity.resolvedPath,
+                         isDirectory: true).deletingLastPathComponent()
         let stage = parent.appendingPathComponent(".vellograph-stage-\(identifier)", isDirectory: true)
         let recovery = parent.appendingPathComponent(".vellograph-recovery-\(identifier)", isDirectory: true)
         try fm.createDirectory(at: stage, withIntermediateDirectories: false,
                                attributes: [.posixPermissions: 0o700])
         defer { try? fm.removeItem(at: stage) }
+        let stageHandle = try FolderDirectoryHandle(url: stage)
 
         // Copy every source item before touching the destination. A failed
         // source read therefore leaves destination contents unchanged.
         for action in actions where action.kind == .create || action.kind == .replace {
-            let staged = stage.appendingPathComponent(action.path)
-            try fm.createDirectory(at: staged.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try fm.copyItem(at: sourceRoot.appendingPathComponent(action.path), to: staged)
-            guard try Self.fingerprintAt(staged) == action.sourceFingerprint else {
+            try afterSourcePreflight?(action)
+            try validateSourceIdentity(action, using: sourceHandle)
+            let (sourceParent, sourceName) = try Self.sourceParent(in: sourceHandle, for: action.path)
+            guard try sourceParent.fingerprint(sourceName) == action.sourceFingerprint else {
+                throw FolderOperationError.stalePreview(action.path)
+            }
+            let (stageParent, stageName) = try stageHandle.parent(for: action.path, creating: true)
+            try sourceParent.copy(sourceName, to: stageParent, as: stageName,
+                                  kind: action.itemKind, expectedIdentity: action.sourceIdentity)
+            guard try stageParent.fingerprint(stageName) == action.sourceFingerprint else {
+                throw FolderOperationError.stalePreview(action.path)
+            }
+            let (currentSourceParent, _) = try Self.sourceParent(in: sourceHandle, for: action.path)
+            guard currentSourceParent.sameDirectory(as: sourceParent) else {
                 throw FolderOperationError.stalePreview(action.path)
             }
         }
         try preflight()
-        let stageHandle = try FolderDirectoryHandle(url: stage)
         try fm.createDirectory(at: recovery, withIntermediateDirectories: false,
                                attributes: [.posixPermissions: 0o700])
         let recoveryHandle = try FolderDirectoryHandle(url: recovery)
@@ -252,6 +288,7 @@ public struct FolderOperationPlan: Sendable {
             for action in actions {
                 try Task<Never, Never>.checkCancellation()
                 try validateRootIdentities()
+                try validateSourceIdentity(action, using: sourceHandle)
                 try Self.validateDestinationParents(destinationRoot, path: action.path)
                 if action.itemKind == .symbolicLink && action.kind != .remove {
                     try Self.validateSymbolicLink(
@@ -388,12 +425,18 @@ public struct FolderOperationPlan: Sendable {
         try validateRootIdentities()
         let currentSource = try FolderComparison.scan(sourceRoot, options: options)
         let currentDestination = try FolderComparison.scan(destinationRoot, options: options)
+        let sourceHandle = try FolderDirectoryHandle(
+            url: URL(fileURLWithPath: sourceIdentity.resolvedPath, isDirectory: true))
+        guard sourceHandle.identityMatches(sourceIdentity) else {
+            throw FolderOperationError.stalePreview("folder root")
+        }
         let packages = try Self.packagePaths(in: sourceRoot, entries: currentSource)
             .union(Self.packagePaths(in: destinationRoot, entries: currentDestination))
         guard Set(currentSource.keys) == sourcePaths, Set(currentDestination.keys) == destinationPaths else {
             throw FolderOperationError.stalePreview("folder contents")
         }
         for action in actions {
+            try validateSourceIdentity(action, using: sourceHandle)
             try Self.validatePackagePath(action.path, against: packages)
             let source = try currentSource[action.path].map(Self.fingerprint)
             let destination = try currentDestination[action.path].map(Self.fingerprint)
@@ -405,6 +448,24 @@ public struct FolderOperationPlan: Sendable {
                                               destinationRoot: destinationRoot, path: action.path)
             }
             try Self.validateDestinationParents(destinationRoot, path: action.path)
+        }
+    }
+
+    private func validateSourceIdentity(_ action: FolderAction,
+                                        using sourceHandle: FolderDirectoryHandle) throws {
+        guard action.sourceIdentity != nil else { return }
+        let (parent, name) = try Self.sourceParent(in: sourceHandle, for: action.path)
+        guard try parent.directoryIdentity() == action.sourceParentIdentity,
+              try parent.entryIdentity(name) == action.sourceIdentity else {
+            throw FolderOperationError.stalePreview(action.path)
+        }
+    }
+
+    private static func sourceParent(in root: FolderDirectoryHandle,
+                                     for path: String) throws -> (FolderDirectoryHandle, String) {
+        do { return try root.parent(for: path) }
+        catch FolderOperationError.unsafeDestination {
+            throw FolderOperationError.stalePreview(path)
         }
     }
 
@@ -478,8 +539,8 @@ public struct FolderOperationPlan: Sendable {
         let a = source.resolvingSymlinksInPath().standardizedFileURL.path
         let b = destination.resolvingSymlinksInPath().standardizedFileURL.path
         guard a != b, !a.hasPrefix(b + "/"), !b.hasPrefix(a + "/"),
-              (try? FileManager.default.attributesOfItem(atPath: source.path)[.type] as? FileAttributeType) == .typeDirectory,
-              (try? FileManager.default.attributesOfItem(atPath: destination.path)[.type] as? FileAttributeType) == .typeDirectory else {
+              (try? FileManager.default.attributesOfItem(atPath: a)[.type] as? FileAttributeType) == .typeDirectory,
+              (try? FileManager.default.attributesOfItem(atPath: b)[.type] as? FileAttributeType) == .typeDirectory else {
             throw FolderOperationError.invalidRoots
         }
     }
@@ -528,22 +589,6 @@ public struct FolderOperationPlan: Sendable {
         }
     }
 
-    private static func fingerprintAt(_ url: URL) throws -> FolderFingerprint? {
-        let attributes: [FileAttributeKey: Any]
-        do { attributes = try FileManager.default.attributesOfItem(atPath: url.path) }
-        catch let error as NSError where error.code == NSFileNoSuchFileError ||
-            error.code == NSFileReadNoSuchFileError { return nil }
-        let kind: FolderItemKind
-        switch attributes[.type] as? FileAttributeType {
-        case .typeRegular: kind = .file
-        case .typeDirectory: kind = .directory
-        case .typeSymbolicLink: kind = .symbolicLink
-        default: kind = .other
-        }
-        return try fingerprint(FolderComparison.Entry(url: url, kind: kind,
-                                                       size: (attributes[.size] as? NSNumber)?.int64Value ?? 0))
-    }
-
     private static func fingerprint(_ entry: FolderComparison.Entry) throws -> FolderFingerprint {
         switch entry.kind {
         case .directory: return FolderFingerprint(kind: .directory, digest: nil)
@@ -587,6 +632,12 @@ private final class FolderDirectoryHandle {
         var right = stat()
         return fstat(fd, &left) == 0 && fstat(other.fd, &right) == 0 &&
             left.st_dev == right.st_dev && left.st_ino == right.st_ino
+    }
+
+    func directoryIdentity() throws -> FolderEntryIdentity {
+        var details = stat()
+        guard fstat(fd, &details) == 0 else { throw Self.systemError() }
+        return FolderEntryIdentity(device: UInt64(details.st_dev), inode: UInt64(details.st_ino))
     }
 
     func parent(for path: String, creating: Bool = false) throws -> (FolderDirectoryHandle, String) {
@@ -653,6 +704,50 @@ private final class FolderDirectoryHandle {
             throw Self.systemError()
         }
         return FolderEntryIdentity(device: UInt64(details.st_dev), inode: UInt64(details.st_ino))
+    }
+
+    func copy(_ name: String, to destination: FolderDirectoryHandle,
+              as destinationName: String, kind: FolderItemKind,
+              expectedIdentity: FolderEntryIdentity?) throws {
+        switch kind {
+        case .file:
+            let sourceFD = openat(fd, name, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+            guard sourceFD >= 0 else { throw FolderOperationError.stalePreview(name) }
+            defer { Darwin.close(sourceFD) }
+            var details = stat()
+            guard fstat(sourceFD, &details) == 0,
+                  details.st_mode & mode_t(S_IFMT) == mode_t(S_IFREG),
+                  FolderEntryIdentity(device: UInt64(details.st_dev), inode: UInt64(details.st_ino))
+                      == expectedIdentity else {
+                throw FolderOperationError.stalePreview(name)
+            }
+            let destinationFD = openat(destination.fd, destinationName,
+                                       O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
+            guard destinationFD >= 0 else { throw Self.systemError() }
+            defer { Darwin.close(destinationFD) }
+            guard fcopyfile(sourceFD, destinationFD, nil, copyfile_flags_t(COPYFILE_ALL)) == 0 else {
+                throw Self.systemError()
+            }
+        case .symbolicLink:
+            guard try entryIdentity(name) == expectedIdentity else {
+                throw FolderOperationError.stalePreview(name)
+            }
+            var target = [CChar](repeating: 0, count: Int(PATH_MAX) + 1)
+            let count = target.withUnsafeMutableBufferPointer { buffer in
+                readlinkat(fd, name, buffer.baseAddress, buffer.count - 1)
+            }
+            guard count >= 0, count < target.count - 1 else {
+                throw FolderOperationError.stalePreview(name)
+            }
+            guard try entryIdentity(name) == expectedIdentity else {
+                throw FolderOperationError.stalePreview(name)
+            }
+            guard target.withUnsafeBufferPointer({ buffer in
+                symlinkat(buffer.baseAddress, destination.fd, destinationName)
+            }) == 0 else { throw Self.systemError() }
+        case .directory, .other:
+            throw FolderOperationError.unsupportedItem(name)
+        }
     }
 
     func move(_ name: String, to destination: FolderDirectoryHandle, as destinationName: String? = nil) throws {

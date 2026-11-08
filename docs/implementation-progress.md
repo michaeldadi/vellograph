@@ -567,7 +567,17 @@ local use, hosted CI, and release qualification.
   disposable comparison pairs, verifies the last tab and Home button are
   hittable, and uses the shortcut to reach Welcome. It passed locally on
   macOS 27.2. The test inputs are removed afterward. Hosted run `42517366685`
-  passed both jobs at `facb873` before the fixed Home button was added.
+  passed both jobs at `facb873` before the fixed Home button was added. Hosted
+  run `42518021080` passed both jobs at `fe1fb8c`, including the fixed Home
+  button and all 14 native UI cases.
+- Folder staging now reads files from pinned source directory descriptors and
+  uses `fcopyfile` to preserve file metadata. It checks the planned source
+  file and parent identities before staging and each destination action;
+  source parent symlink swaps and identical-looking replacement directories
+  fail without writing the destination. A selected root alias resolves before
+  staging, keeping recovery on the destination's volume. Local source-swap,
+  alias, mode-preservation, and internal-link tests pass; hosted validation of
+  this change remains pending.
 
 ## Next verification and implementation
 

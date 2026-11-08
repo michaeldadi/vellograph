@@ -171,9 +171,12 @@ changes originate in `project.yml` and are reviewed together.
 
 The current public repository and draft PR contain a broad implementation,
 and hosted macOS 27 CI has passed 14 native UI cases. Those cases cover only
-part of the checklist. Descriptor-safe folder mutation, larger image handling,
-app-level performance gates, several real host integrations, and final-package
-update tests remain. A Developer ID Application identity is not currently
+part of the checklist. Destination mutations use pinned descriptors; source
+staging now does too, pending a hosted pass. Folder acceptance still needs
+interrupted-operation and full clone failure workflows. Full-resolution
+large-image workflows, app-level performance gates, several real host
+integrations, and final-package update tests remain.
+A Developer ID Application identity is not currently
 installed on this Mac, so a notarized public release and Homebrew cask cannot
 yet be validated. The renewed Apple Developer account may resolve that gate
 once signing is configured; account renewal alone does not establish signing.

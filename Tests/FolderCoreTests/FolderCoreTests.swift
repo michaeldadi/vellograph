@@ -98,6 +98,95 @@ import Testing
                        encoding: .utf8) == "previewed")
 }
 
+@Test func sourceParentSwappedToSymbolicLinkBeforeStagingIsRejected() throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let sourceSubdirectory = source.appendingPathComponent("sub", isDirectory: true)
+    let retained = root.appendingPathComponent("retained-source", isDirectory: true)
+    let outside = root.appendingPathComponent("outside", isDirectory: true)
+    try FileManager.default.createDirectory(at: sourceSubdirectory, withIntermediateDirectories: false)
+    try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: false)
+    try Data("same bytes".utf8).write(to: sourceSubdirectory.appendingPathComponent("item.txt"))
+    try Data("same bytes".utf8).write(to: outside.appendingPathComponent("item.txt"))
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["sub/item.txt"])
+    #expect(throws: FolderOperationError.stalePreview("sub/item.txt")) {
+        try plan.apply(afterFinalTargetCheck: nil, afterSourcePreflight: { action in
+            guard action.path == "sub/item.txt" else { return }
+            try FileManager.default.moveItem(at: sourceSubdirectory, to: retained)
+            try FileManager.default.createSymbolicLink(atPath: sourceSubdirectory.path,
+                                                       withDestinationPath: outside.path)
+        })
+    }
+    #expect(try String(contentsOf: outside.appendingPathComponent("item.txt"),
+                       encoding: .utf8) == "same bytes")
+    #expect(try String(contentsOf: retained.appendingPathComponent("item.txt"),
+                       encoding: .utf8) == "same bytes")
+    #expect(!FileManager.default.fileExists(
+        atPath: destination.appendingPathComponent("sub/item.txt").path))
+}
+
+@Test func descriptorStagingPreservesFileMode() throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let sourceFile = source.appendingPathComponent("script.sh")
+    let destinationFile = destination.appendingPathComponent("script.sh")
+    try Data("#!/bin/sh\ntrue\n".utf8).write(to: sourceFile)
+    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: sourceFile.path)
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["script.sh"])
+    _ = try plan.apply()
+    let mode = try FileManager.default.attributesOfItem(atPath: destinationFile.path)[.posixPermissions] as? NSNumber
+    #expect(mode?.intValue == 0o755)
+    #expect(try Data(contentsOf: destinationFile) == Data(contentsOf: sourceFile))
+}
+
+@Test func destinationAliasKeepsRecoveryBesideResolvedFolder() throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let links = root.appendingPathComponent("links", isDirectory: true)
+    try FileManager.default.createDirectory(at: links, withIntermediateDirectories: false)
+    let alias = links.appendingPathComponent("destination-alias", isDirectory: true)
+    try FileManager.default.createSymbolicLink(atPath: alias.path,
+                                               withDestinationPath: destination.path)
+    try Data("new".utf8).write(to: source.appendingPathComponent("item.txt"))
+    try Data("old".utf8).write(to: destination.appendingPathComponent("item.txt"))
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: alias,
+                                                selectedPaths: ["item.txt"])
+    let result = try plan.apply()
+    #expect(try String(contentsOf: destination.appendingPathComponent("item.txt"),
+                       encoding: .utf8) == "new")
+    #expect(result.recoveryFolder?.deletingLastPathComponent() == destination.deletingLastPathComponent())
+    #expect(try String(contentsOf: result.recoveryFolder!.appendingPathComponent("item.txt"),
+                       encoding: .utf8) == "old")
+}
+
+@Test func sourceParentReplacedWithMatchingBytesStillInvalidatesPreview() throws {
+    let (root, source, destination) = try folders()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let sourceSubdirectory = source.appendingPathComponent("sub", isDirectory: true)
+    let retained = root.appendingPathComponent("retained-source", isDirectory: true)
+    try FileManager.default.createDirectory(at: sourceSubdirectory, withIntermediateDirectories: false)
+    try Data("same bytes".utf8).write(to: sourceSubdirectory.appendingPathComponent("item.txt"))
+    let plan = try FolderOperationPlan.makeCopy(from: source, to: destination,
+                                                selectedPaths: ["sub/item.txt"])
+    #expect(throws: FolderOperationError.stalePreview("sub/item.txt")) {
+        try plan.apply(afterFinalTargetCheck: nil, afterSourcePreflight: { action in
+            guard action.path == "sub/item.txt" else { return }
+            try FileManager.default.moveItem(at: sourceSubdirectory, to: retained)
+            try FileManager.default.createDirectory(at: sourceSubdirectory,
+                                                    withIntermediateDirectories: false)
+            try Data("same bytes".utf8).write(to: sourceSubdirectory.appendingPathComponent("item.txt"))
+        })
+    }
+    #expect(try String(contentsOf: sourceSubdirectory.appendingPathComponent("item.txt"),
+                       encoding: .utf8) == "same bytes")
+    #expect(try String(contentsOf: retained.appendingPathComponent("item.txt"),
+                       encoding: .utf8) == "same bytes")
+    #expect(!FileManager.default.fileExists(
+        atPath: destination.appendingPathComponent("sub/item.txt").path))
+}
+
 @Test func pinnedDestinationParentNeverWritesThroughAReplacementLink() throws {
     let (root, source, destination) = try folders()
     defer { try? FileManager.default.removeItem(at: root) }
