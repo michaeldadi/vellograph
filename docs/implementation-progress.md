@@ -448,7 +448,8 @@ local use, hosted CI, and release qualification.
   workspace now declares that it accepts external URLs. After installing the
   signed Release build, the same URL opened a tab in the existing window and
   left one app process and one IPC listener. The disposable comparison tab was
-  closed afterward.
+  closed afterward. A link to a missing absolute file showed the native
+  "Unable to Open" alert without adding a comparison tab.
 
 ## Next verification and implementation
 

@@ -44,3 +44,9 @@ unmerged stages. Repeating it, saving a Remote resolution, and exiting
 returned success, wrote the exact selected bytes, and cleared those stages.
 Repository-local uninstall then removed the tool settings. The final release
 package still needs this host check.
+
+A disposable Git repository also invoked the installed Release app through
+`git difftool --no-prompt --tool=vellograph`. Its native comparison showed the
+committed `before` content on A and the working file's `after` content on B.
+Closing the tab returned Git status 0; the working file remained modified and
+repository-local uninstall removed the tool setting.
