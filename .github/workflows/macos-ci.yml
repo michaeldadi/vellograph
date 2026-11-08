@@ -66,6 +66,11 @@ jobs:
           scripts/verify-app-bundle.sh \
             "$RUNNER_TEMP/VellographDerivedData/Build/Products/Release/Vellograph.app"
 
+      - name: Verify signed update feed and app settings
+        run: |
+          swift scripts/verify-update-feed.swift docs/appcast.xml \
+            "$RUNNER_TEMP/VellographDerivedData/Build/Products/Release/Vellograph.app/Contents/Info.plist"
+
       - name: Record weekly core performance
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |

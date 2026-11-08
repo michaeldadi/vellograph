@@ -125,6 +125,8 @@ targets:
               - public.item
         SUFeedURL: https://michaeldadi.github.io/vellograph/appcast.xml
         SUPublicEDKey: VSfGne1/1drahXuPUd0BdomB2P/sUNppRjTtKihb0+8=
+        SUVerifyUpdateBeforeExtraction: true
+        SURequireSignedFeed: true
         SUEnableAutomaticChecks: true
         SUAllowsAutomaticUpdates: true
         CFBundleURLTypes:

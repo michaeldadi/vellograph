@@ -20,8 +20,16 @@ This is a local development proof, not a public release qualification.
 - **Install Update** downloaded and extracted the archive. **Install and Relaunch** replaced the app. The relaunched About panel showed 0.1.1 (2), and `codesign --verify --deep --strict` passed.
 - `sign_update --verify` accepted the published archive and rejected a copy modified by one byte. This tests the archive signature, not Sparkle's in-app error presentation.
 - A signed 0.1.0 archive was restored and launched; About showed 0.1.0 (1). The 0.1.1 app was then restored and its code signature verified. This tests a manual local rollback path.
-- The appcast's archive enclosure carries an EdDSA signature. The feed is
-  delivered over HTTPS; the private EdDSA key remains in the local Keychain.
+- The appcast's archive enclosure and the appcast itself carry EdDSA
+  signatures. The feed is delivered over HTTPS; the private EdDSA key remains
+  in the local Keychain. On November 8, the published Vellograph feed matched
+  the checked-in appcast byte-for-byte, and Sparkle's `sign_update --verify`
+  accepted both copies and rejected a copy with a changed title. A signed
+  Release app build now enables signed-feed validation and archive verification
+  before extraction; the built bundle passed signature and Info.plist checks.
+  The CI verifier checks the feed against the app's embedded public key without
+  needing the private signing key and rejected the changed copy locally.
+  Its behavior against a tampered or offline feed still needs an in-app check.
 
 ## Still required before release
 

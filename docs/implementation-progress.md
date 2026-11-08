@@ -422,12 +422,25 @@ local use, hosted CI, and release qualification.
   A standalone FSEvents probe showed both path forms. In the installed signed
   build, a file edit updated the text without manual Refresh, Pause held the
   old result, Resume caught up, and two rapid edits displayed the final text.
-  Hosted execution of the corrected watcher is still required.
+  The first hosted execution of the corrected watcher displayed the final
+  text in the accessibility tree and passed the other eleven native cases, but
+  the new test queried the text element's label instead of its value. That
+  assertion has been corrected. The next hosted `native-ui` run passed all
+  twelve cases at commit `8ec8498` (run `42483235046`); its build-and-test job
+  also passed.
 - A hosted run after the workspace-focus change passed the build job but had
   one native UI failure: the three-way merge test read its output file before
   the Save action had visibly completed. The test now waits for the app's
-  "Saved" confirmation before checking the exact output bytes. The new case
-  and this timing correction still require a passing hosted run.
+  "Saved" confirmation before checking the exact output bytes. That corrected
+  merge workflow passed in the twelve-case hosted run `42483235046`.
+- The published Vellograph appcast matched the checked-in copy byte-for-byte.
+  Sparkle 2.10.1's `sign_update --verify` accepted both, and rejected a copy
+  with a changed title. The app now opts into signed-feed validation and
+  verification of update archives before extraction. A signed Release build
+  passed bundle, code-signature, and both Info.plist flag checks. In-app
+  tamper/offline behavior and public signing remain open. A public-key verifier
+  now checks the appcast signature and both built-app settings in CI; it passed
+  locally against the signed feed and rejected a changed copy.
 
 ## Next verification and implementation
 

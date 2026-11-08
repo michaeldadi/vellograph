@@ -61,5 +61,9 @@
 	<string>https://michaeldadi.github.io/vellograph/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>VSfGne1/1drahXuPUd0BdomB2P/sUNppRjTtKihb0+8=</string>
+	<key>SURequireSignedFeed</key>
+	<true/>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
 </dict>
 </plist>
