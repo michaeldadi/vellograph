@@ -27,8 +27,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Vellograph
-        CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "3"
+        CFBundleShortVersionString: "0.2.1"
+        CFBundleVersion: "4"
         LSApplicationCategoryType: public.app-category.developer-tools
         SUFeedURL: https://michaeldadi.github.io/vellograph/appcast.xml
         SUPublicEDKey: VSfGne1/1drahXuPUd0BdomB2P/sUNppRjTtKihb0+8=

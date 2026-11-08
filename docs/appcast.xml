@@ -1,0 +1,20 @@
+<?xml version="1.0" standalone="yes"?><!-- sparkle-sign-warning:
+IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
+--><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Vellograph</title>
+        <item>
+            <title>0.2.1</title>
+            <pubDate>Sat, 07 Nov 2026 21:18:05 -0500</pubDate>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>0.2.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>27.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="plain-text"><![CDATA[Vellograph identity and update-feed proof on macOS 27.2. This remains an early development build.
+]]></description>
+            <enclosure url="https://github.com/michaeldadi/vellograph/releases/download/v0.2.1-update-proof/Vellograph-0.2.1.zip" length="1339860" type="application/octet-stream" sparkle:edSignature="E3Fr+bR3CRzKpAUQzVVPU99av63pTYeg2JPOmxLNhE/l3MNcxVGq4FtX3jBrlQtX8NFed8QgcglCMn6uTdpBDw=="></enclosure>
+        </item>
+    </channel>
+</rss><!-- sparkle-signatures:
+edSignature: BH3F361q9iLj1oXFF35ddIVrPiviq6ah7StQeiLxkIAhlAjE7NwKAAEc4YqwneG/jD9/c5ZdZCvRwBT00Gg8Dg==
+length: 1241
+-->
