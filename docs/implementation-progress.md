@@ -416,6 +416,11 @@ local use, hosted CI, and release qualification.
   and two rapid edits that should display the final file contents. The Swift
   package suite and signed Xcode test build passed locally; hosted execution
   is still required before recording the workflow as passed.
+- A hosted run after the workspace-focus change passed the build job but had
+  one native UI failure: the three-way merge test read its output file before
+  the Save action had visibly completed. The test now waits for the app's
+  "Saved" confirmation before checking the exact output bytes. The new case
+  and this timing correction still require a passing hosted run.
 
 ## Next verification and implementation
 

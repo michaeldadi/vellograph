@@ -238,6 +238,7 @@ import XCTest
         XCTAssertTrue(saveDialog.waitForExistence(timeout: 5))
         saveDialog.buttons["Save"].click()
         let saved = folder.appendingPathComponent("1-local.txt.merged")
+        XCTAssertTrue(app.staticTexts["Saved 1-local.txt.merged"].waitForExistence(timeout: 10))
         XCTAssertEqual(try String(contentsOf: saved, encoding: .utf8), "same\nremote\n")
         XCTAssertEqual(try String(contentsOf: folder.appendingPathComponent("1-local.txt"),
                                   encoding: .utf8), "same\nlocal\n")
