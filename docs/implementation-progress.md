@@ -502,8 +502,12 @@ local use, hosted CI, and release qualification.
   replacement. The full Swift package suite and signed Release build passed.
   After a guarded install, the bundled CLI opened a disposable two-file diff
   in the running app, which showed the expected one-change result. The test
-  tab and files were removed. Interrupted-response and wrong-user peer
-  workflows remain open.
+  tab and files were removed. Hosted run `42508584298` passed both jobs at
+  commit `7187cd6`, including all 14 native UI cases. A new core test uses a
+  private same-user Unix socket whose peer reads the request and closes before
+  replying; the client returns `invalidMessage` promptly. The full Swift
+  package suite and signed Release build pass locally with that test. A real
+  app-process interruption and wrong-user peer workflow remain open.
 
 ## Next verification and implementation
 

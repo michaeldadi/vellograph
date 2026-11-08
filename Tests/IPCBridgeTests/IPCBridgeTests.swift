@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import IPCBridge
 import Testing
@@ -121,6 +122,57 @@ import Testing
                                    path: directory.appendingPathComponent("control.sock"),
                                    responseTimeout: 0.1)
     }
+}
+
+@Test func peerClosingBeforeResponseReturnsInvalidMessage() throws {
+    let directory = URL(fileURLWithPath: "/tmp", isDirectory: true)
+        .appendingPathComponent("vellograph-ipc-disconnect-\(UUID().uuidString)", isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                                            attributes: [.posixPermissions: 0o700])
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let path = directory.appendingPathComponent("control.sock")
+    let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
+    #expect(fd >= 0)
+    guard fd >= 0 else { return }
+    defer { Darwin.close(fd) }
+
+    var address = sockaddr_un()
+    address.sun_family = sa_family_t(AF_UNIX)
+    address.sun_len = UInt8(MemoryLayout<sockaddr_un>.size)
+    let pathBytes = Array(path.path.utf8CString)
+    let pathCapacity = MemoryLayout.size(ofValue: address.sun_path)
+    #expect(pathBytes.count < pathCapacity)
+    withUnsafeMutablePointer(to: &address.sun_path) { pointer in
+        pointer.withMemoryRebound(to: CChar.self,
+                                  capacity: pathCapacity) { destination in
+            for (index, byte) in pathBytes.enumerated() { destination[index] = byte }
+        }
+    }
+    let bound = withUnsafePointer(to: &address) { pointer in
+        pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { socketPointer in
+            Darwin.bind(fd, socketPointer, socklen_t(MemoryLayout<sockaddr_un>.size))
+        }
+    }
+    #expect(bound == 0)
+    #expect(chmod(path.path, 0o600) == 0)
+    #expect(Darwin.listen(fd, 1) == 0)
+
+    let finished = DispatchSemaphore(value: 0)
+    DispatchQueue.global(qos: .userInitiated).async {
+        defer { finished.signal() }
+        let peer = Darwin.accept(fd, nil, nil)
+        guard peer >= 0 else { return }
+        defer { Darwin.close(peer) }
+        var byte: UInt8 = 0
+        while Darwin.read(peer, &byte, 1) == 1 && byte != 10 {}
+        // Simulate an app process that exits after receiving the command but
+        // before sending a reply.
+    }
+    #expect(throws: IPCBridgeError.invalidMessage) {
+        try LocalSocketClient.send(IPCRequest(action: .diff), path: path,
+                                   responseTimeout: 2)
+    }
+    #expect(finished.wait(timeout: .now() + 3) == .success)
 }
 
 @Test func abandonedSnapshotsAreRemovedWithoutTouchingOtherFiles() throws {
