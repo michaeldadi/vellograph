@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import DiffCore
 import FolderCore
+import ImageIO
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -39,8 +40,8 @@ private enum CompareActionPreview: Sendable {
         let leftIsImage = UTType(filenameExtension: left.pathExtension)?.conforms(to: .image) == true
         let rightIsImage = UTType(filenameExtension: right.pathExtension)?.conforms(to: .image) == true
         if leftIsImage && rightIsImage {
-            let a = try boundedData(left, maxBytes: 25_000_000)
-            let b = try boundedData(right, maxBytes: 25_000_000)
+            let a = try previewImageData(left)
+            let b = try previewImageData(right)
             return .images(a, b)
         }
         if leftIsImage || rightIsImage {
@@ -75,16 +76,49 @@ private enum CompareActionPreview: Sendable {
         }
         return data
     }
+
+    private static func previewImageData(_ url: URL) throws -> Data {
+        let sourceData = try boundedData(url, maxBytes: 25_000_000)
+        guard let source = CGImageSourceCreateWithData(sourceData as CFData, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? Int,
+              let height = properties[kCGImagePropertyPixelHeight] as? Int,
+              width > 0, height > 0,
+              width <= 100_000_000 / height else {
+            throw CompareActionError.imageTooLargeOrInvalid
+        }
+        guard let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: 2_048,
+            kCGImageSourceShouldCacheImmediately: false,
+        ] as CFDictionary),
+              thumbnail.width <= 2_048, thumbnail.height <= 2_048 else {
+            throw CompareActionError.imageTooLargeOrInvalid
+        }
+        let output = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(output, UTType.png.identifier as CFString, 1, nil) else {
+            throw CompareActionError.imageTooLargeOrInvalid
+        }
+        CGImageDestinationAddImage(destination, thumbnail, nil)
+        guard CGImageDestinationFinalize(destination) else {
+            throw CompareActionError.imageTooLargeOrInvalid
+        }
+        return output as Data
+    }
 }
 
 private enum CompareActionError: LocalizedError {
     case fileTooLarge
+    case imageTooLargeOrInvalid
     case missingHostItem
 
     var errorDescription: String? {
         switch self {
         case .fileTooLarge:
             "This item is too large for the quick preview. Open it in Vellograph instead."
+        case .imageTooLargeOrInvalid:
+            "This image is too large or cannot be decoded safely for a quick preview. Open it in Vellograph instead."
         case .missingHostItem:
             "The host app could not provide the selected item."
         }
